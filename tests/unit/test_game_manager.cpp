@@ -53,3 +53,21 @@ TEST_F(GameManagerTest, GameStartCondition) {
     // Given the simplicity, let's assume it might transition or at least accept the player.
     EXPECT_EQ(gm->table.playerCount(), 2);
 }
+
+TEST_F(GameManagerTest, TopUp) {
+    gm->onPlayerJoin(p1);
+    gm->onPlayerJoin(p2);
+    
+    // Game started, state is PREFLOP. Top up not allowed.
+    // Force state to HAND_END to simulate end of hand
+    gm->table.state = GameState::HAND_END;
+    
+    // Set stack to low
+    p1->stack = 10;
+    
+    // Top up
+    gm->onPlayerTopUp("p1");
+    
+    // Should be topped up to max (100)
+    EXPECT_EQ(p1->stack, 100);
+}

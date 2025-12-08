@@ -3,14 +3,15 @@
 #include "../common/protocol.hpp"
 #include "../common/hand_evaluator.hpp"
 #include <functional>
-#include <vector>
 #include <string>
+#include <vector>
+#include "timeout_manager.hpp" // Include TimeoutManager
 
 namespace poker {
 
 class GameManager {
 public:
-    GameManager();
+    GameManager(boost::asio::io_context& ioc); // Pass ioc to TimeoutManager
     
     // External events
     void onPlayerJoin(std::shared_ptr<Player> player);
@@ -25,6 +26,7 @@ public:
     std::function<void(const Message&)> broadcast;
 
     Table table;
+    TimeoutManager timeout_manager; // Member for managing timeouts
 
 private:
     void startHand();
