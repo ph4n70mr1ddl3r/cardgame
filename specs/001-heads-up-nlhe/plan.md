@@ -1,28 +1,42 @@
 # Implementation Plan: Heads Up NLHE Server and Bot Client
 
 **Branch**: `001-heads-up-nlhe` | **Date**: 2025-12-08 | **Spec**: [specs/001-heads-up-nlhe/spec.md](specs/001-heads-up-nlhe/spec.md)
-**Input**: Feature specification from `/home/riddler/geminispec/specs/001-heads-up-nlhe/spec.md`
+**Input**: Feature specification from `/specs/001-heads-up-nlhe/spec.md`
+
+**Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
 
 ## Summary
 
-Build a Heads-Up No Limit Hold'em (NLHE) server and an autonomous bot client using modern C++. The server will host a single table for 2 players, enforcing standard NLHE rules. The bot client will play with a random strategy, handle automatic top-ups, and simulate human delays. Communication will be via WebSockets using JSON data payloads.
+Build a dedicated C++20 game server that hosts a single Heads-Up No Limit Texas Hold'em (NLHE) table for two players. The system includes an autonomous bot client that connects to the server, plays with a random strategy, mimics human delays, and automatically rebuys chips when low. The server must robustly handle player disconnections, reconnection grace periods, and timeouts, ensuring the game state remains valid throughout.
 
 ## Technical Context
 
-**Language/Version**: C++20
-**Primary Dependencies**: 
-- WebSocket Library (NEEDS CLARIFICATION: Boost.Beast vs uWebSockets?)
-- JSON Library (NEEDS CLARIFICATION: nlohmann/json vs rapidjson?)
-**Storage**: In-memory (Game state persistence not required per spec)
-**Testing**: NEEDS CLARIFICATION (Google Test vs Catch2?)
-**Target Platform**: Linux
-**Project Type**: Client/Server (CLI/Console)
-**Performance Goals**: Real-time interaction (<100ms processing), stable socket connections.
-**Constraints**: Must handle disconnections and re-connections gracefully (state recovery).
+<!--
+  ACTION REQUIRED: Replace the content in this section with the technical details
+  for the project. The structure here is presented in advisory capacity to guide
+  the iteration process.
+-->
+
+**Language/Version**: C++20  
+**Primary Dependencies**: Boost.Beast (WebSockets), nlohmann/json (Serialization), Boost.Asio (Networking)  
+**Storage**: N/A (In-memory state)  
+**Testing**: Google Test (Unit), Pytest (Integration)  
+**Target Platform**: Linux  
+**Project Type**: Client/Server CLI  
+**Performance Goals**: Low latency for game actions, but not high-frequency trading level.  
+**Constraints**: Must handle network instability (disconnects) gracefully.  
+**Scale/Scope**: 1 server instance = 1 table, 2 max clients.
 
 ## Constitution Check
 
-*GATE: Passed. (Constitution is generic, adhering to standard C++ best practices).*
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+
+- **I. Clean Code & Standards**: C++20 standards will be enforced.
+- **II. Test-First Methodology**: Unit tests for game logic (`common`, `server`) and integration tests for network protocol are planned.
+- **III. Consistent User Experience**: CLI arguments for configuration (timeouts, ports).
+- **IV. Modular Architecture**: Separation of `client`, `server`, and `common` (protocol/logic).
+
+**Gate Status**: PASS
 
 ## Project Structure
 
@@ -30,31 +44,53 @@ Build a Heads-Up No Limit Hold'em (NLHE) server and an autonomous bot client usi
 
 ```text
 specs/001-heads-up-nlhe/
-├── plan.md
-├── research.md
-├── data-model.md
-├── quickstart.md
-└── contracts/
-    └── game-protocol.md
+├── plan.md              # This file
+├── research.md          # Technology choices and rationale
+├── data-model.md        # Entities and state definitions
+├── quickstart.md        # Usage guide
+├── contracts/           # API/Protocol definitions
+└── tasks.md             # Implementation tasks
 ```
 
 ### Source Code (repository root)
+<!--
+  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
+  for this feature. Delete unused options and expand the chosen structure with
+  real paths (e.g., apps/admin, packages/something). The delivered plan must
+  not include Option labels.
+-->
 
 ```text
-CMakeLists.txt
 src/
-├── common/             # Shared logic (Game rules, Card/Deck models, Protocol definitions)
-├── server/             # Game server logic (WebSocket server, Game loop)
-└── client/             # Bot client logic (WebSocket client, Decision engine)
+├── client/
+│   ├── main.cpp
+│   ├── network_client.hpp
+│   └── bot_state.hpp
+├── server/
+│   ├── main.cpp
+│   ├── server.hpp
+│   ├── game_manager.hpp
+│   └── player.hpp
+└── common/
+    ├── protocol.hpp
+    ├── card.hpp
+    ├── hand_evaluator.hpp
+    └── types.hpp
+
 tests/
-├── unit/               # Unit tests for logic
-└── integration/        # Integration tests for server-client flow
+├── unit/
+│   ├── test_card.cpp
+│   └── test_hand_evaluator.cpp
+└── integration/
+    └── test_core_gameplay.py
 ```
 
-**Structure Decision**: A single CMake monorepo structure. `common` library allows sharing data structures and serialization logic between `server` and `client`, reducing duplication and ensuring protocol consistency.
+**Structure Decision**: A standard C++ project layout with separated client/server executables and a shared library for common game logic and protocol definitions.
 
 ## Complexity Tracking
 
+> **Fill ONLY if Constitution Check has violations that must be justified**
+
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| N/A       |            |                                     |
+| N/A | | |

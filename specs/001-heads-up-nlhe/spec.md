@@ -5,6 +5,13 @@
 **Status**: Draft  
 **Input**: User description: "Build a server that will host 2 clients that will play heads up nlhe. It will use the standard NLHE rules. Handle timeouts gracefully. Build a client that will connect to the server and will start with 100BB. It will be a bot playing with a random strategy. If the stack goes below 5BB, it will automatically top up to 100BB. It will have random delay like a human player. If the client is disconnected, it will be given ample time to return, otherwise it will be considered folded and sat out. After a while it will be removed from the table if it does not return. The server must handle everything gracefully. The server will only accommodate 2 players. So it basically has only 1 table."
 
+## Clarifications
+
+### Session 2025-12-08
+- Q: C++ Dependencies for WebSockets and JSON? → A: Boost.Beast + nlohmann/json.
+- Q: Player Identity & Reconnection Security? → A: Simple String ID.
+- Q: Timeout Configuration? → A: Command-line arguments.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Core Gameplay & Bot Logic (Priority: P1)
@@ -74,12 +81,21 @@ As a system administrator, I want the server to handle player disconnections and
 - **FR-008**: The server MUST set a player to "sit out" status if they fail to reconnect or act within the timeout period.
 - **FR-009**: The server MUST remove a player from the table if they remain in "sit out" or disconnected state for an extended duration (default ~5 mins).
 - **FR-010**: The server MUST handle client messages gracefully, ignoring invalid or out-of-turn actions without crashing.
+- **FR-011**: The server MUST accept reconnection grace period and player removal duration as command-line arguments (with specified defaults).
+
+### Technology Stack
+
+- **Language**: C++20
+- **Networking**: Boost.Beast (WebSocket)
+- **Serialization**: nlohmann/json
+- **Build System**: CMake
 
 ### Assumptions
 
 - **Standard Rules**: "Standard NLHE rules" implies Texas Hold'em with standard hand rankings, Small Blind/Big Blind structure, and No-Limit betting.
 - **Timing Defaults**: "Ample time" for reconnection is assumed to be 30-60 seconds. "After a while" for removal is assumed to be ~5 minutes. "Random delay" is assumed to be 1-5 seconds.
 - **Network**: The server acts as the source of truth; network latency is not explicitly simulated beyond the intentional bot delays.
+- **Player Identity Trust**: For reconnection, the server trusts the `player_id` provided by the client in the `LOGIN` message for identity.
 
 ### Key Entities *(include if feature involves data)*
 
