@@ -51,15 +51,17 @@
 ### Implementation for User Story 1
 
 - [x] T012 [US1] Create `src/server/player.hpp` to track socket session, stack, hole cards, and status
+- [ ] T038 [US1] Create `tests/unit/test_table.cpp` to test blind posting, pot calculation, and state updates (Test-First)
 - [x] T013 [US1] Create `src/server/table.hpp` and `src/server/table.cpp` managing GameState, Pot, and Deck
-- [x] T014 [US1] Implement `src/server/game_loop.cpp` (implemented as `game_manager.cpp`) handling state transitions
+- [ ] T039 [US1] Create `tests/unit/test_game_manager.cpp` to test game flow transitions (preflop -> flop -> ...) (Test-First)
+- [x] T014 [US1] Implement `src/server/game_manager.cpp` handling state transitions
 - [x] T015 [US1] Implement `src/server/server.cpp` using Boost.Beast to accept WebSocket connections and route messages
-- [x] T016 [US1] Integrate `src/server/main.cpp` to start the server and game loop
+- [x] T016 [US1] Implement `src/server/main.cpp` to start the server, parsing command-line args for port and timeouts (FR-011)
 - [x] T017 [P] [US1] Create `src/client/bot_state.hpp` to track client-side game view
 - [x] T018 [P] [US1] Implement `src/client/strategy.cpp` (as header) for random valid action selection
 - [x] T019 [US1] Implement `src/client/network_client.cpp` using Boost.Beast to connect and handle messages
 - [x] T020 [US1] Implement `src/client/main.cpp` with random delay loop (FR-005)
-- [x] T021 [P] [US1] Create `tests/integration/test_core_gameplay.py` (or C++ equivalent) to spawn server and 2 bots and assert exit code/logs
+- [x] T021 [P] [US1] Create `tests/integration/test_core_gameplay.py` to spawn server and 2 bots and assert exit code/logs
 
 **Checkpoint**: Core game loop functional. Bots can play indefinitely (until bust).
 
@@ -76,7 +78,7 @@
 - [x] T022 [US3] Update `src/server/server.cpp` to detect WebSocket disconnection events (handled in initial impl)
 - [x] T023 [US3] Implement `src/server/timeout_manager.hpp` using Boost.Asio timers for turn limits and grace periods
 - [x] T024 [US3] Update `src/server/table.cpp` to handle `DISCONNECTED` state and trigger "sit out" (FR-008)
-- [x] T025 [US3] Implement logic in `src/server/game_loop.cpp` to fold players who timeout or disconnect
+- [x] T025 [US3] Implement logic in `src/server/game_manager.cpp` to fold players who timeout or disconnect
 - [x] T026 [US3] Implement player removal logic (FR-009) after extended "sit out" duration
 - [x] T027 [US3] Update `src/client/network_client.cpp` to attempt reconnection on connection loss
 - [x] T028 [US3] Update `src/server/server.cpp` to handle `LOGIN` from a reconnecting player (restore session)
@@ -94,7 +96,7 @@
 ### Implementation for User Story 2
 
 - [x] T029 [US2] Update `src/common/protocol.hpp` to ensure `TOP_UP` message is defined
-- [x] T030 [US2] Update `src/server/game_loop.cpp` to process `TOP_UP` messages (FR-006)
+- [x] T030 [US2] Update `src/server/game_manager.cpp` to process `TOP_UP` messages (FR-006)
 - [x] T031 [US2] Add logic in `src/server/table.cpp` to validate top-up (only between hands or when allowed)
 - [x] T032 [US2] Update `src/client/bot_logic.cpp` to check stack size at Hand End
 - [x] T033 [US2] Implement logic to send `TOP_UP` request if stack < 5BB (FR-006)
