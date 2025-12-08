@@ -11,6 +11,11 @@
 - Q: C++ Dependencies for WebSockets and JSON? → A: Boost.Beast + nlohmann/json.
 - Q: Player Identity & Reconnection Security? → A: Simple String ID.
 - Q: Timeout Configuration? → A: Command-line arguments.
+- Q: Preferred logging strategy for server operational activities? → A: Structured logging (JSON) to stdout/stderr.
+- Q: Explicitly out-of-scope functionalities/features? → A: GUI, advanced AI, multiple tables, persistent storage.
+- Q: Security for player identity and reconnection to prevent impersonation? → A: No additional security measures beyond `player_id` for this initial version.
+- Q: How server communicates errors/rejections to client? → A: Standardized JSON error responses with specific error codes/messages.
+- Q: Should the server implement rate limiting for client actions? → A: Basic rate limiting (N actions per second) per client.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -82,6 +87,12 @@ As a system administrator, I want the server to handle player disconnections and
 - **FR-009**: The server MUST remove a player from the table if they remain in "sit out" or disconnected state for an extended duration (default ~5 mins).
 - **FR-010**: The server MUST handle client messages gracefully, ignoring invalid or out-of-turn actions without crashing.
 - **FR-011**: The server MUST accept reconnection grace period and player removal duration as command-line arguments (with specified defaults).
+- **FR-012**: The server MUST communicate errors, rejections, and other status messages to clients using standardized JSON responses, including specific error codes and descriptive messages.
+- **FR-013**: The server MUST implement basic rate limiting (e.g., N actions per second) per client to prevent abuse and performance degradation.
+
+### Non-Functional Quality Attributes
+
+- **Observability**: The server MUST implement structured logging (e.g., JSON format) to stdout/stderr for all operational activities, including game state changes, player actions, and errors, to facilitate external log aggregation and analysis.
 
 ### Technology Stack
 
@@ -96,6 +107,13 @@ As a system administrator, I want the server to handle player disconnections and
 - **Timing Defaults**: "Ample time" for reconnection is assumed to be 30-60 seconds. "After a while" for removal is assumed to be ~5 minutes. "Random delay" is assumed to be 1-5 seconds.
 - **Network**: The server acts as the source of truth; network latency is not explicitly simulated beyond the intentional bot delays.
 - **Player Identity Trust**: For reconnection, the server trusts the `player_id` provided by the client in the `LOGIN` message for identity.
+
+## Out-of-Scope
+
+- **Graphical User Interface (GUI)**: No graphical interface for the server or client is planned for this initial iteration.
+- **Advanced AI**: The bot client will use a random strategy; no sophisticated poker AI is included.
+- **Multiple Tables/Games**: The server is designed to host a single Heads-Up table.
+- **Persistent Storage**: Game state, hand histories, or player data will not be persisted across server restarts.
 
 ### Key Entities *(include if feature involves data)*
 
