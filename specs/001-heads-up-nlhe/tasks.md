@@ -51,9 +51,9 @@
 ### Implementation for User Story 1
 
 - [x] T012 [US1] Create `src/server/player.hpp` to track socket session, stack, hole cards, and status
-- [ ] T038 [US1] Create `tests/unit/test_table.cpp` to test blind posting, pot calculation, and state updates (Test-First)
+- [x] T038 [US1] Create `tests/unit/test_table.cpp` to test blind posting, pot calculation, and state updates (Test-First)
 - [x] T013 [US1] Create `src/server/table.hpp` and `src/server/table.cpp` managing GameState, Pot, and Deck
-- [ ] T039 [US1] Create `tests/unit/test_game_manager.cpp` to test game flow transitions (preflop -> flop -> ...) (Test-First)
+- [x] T039 [US1] Create `tests/unit/test_game_manager.cpp` to test game flow transitions (preflop -> flop -> ...) (Test-First)
 - [x] T014 [US1] Implement `src/server/game_manager.cpp` handling state transitions
 - [x] T015 [US1] Implement `src/server/server.cpp` using Boost.Beast to accept WebSocket connections and route messages
 - [x] T016 [US1] Implement `src/server/main.cpp` to start the server, parsing command-line args for port and timeouts (FR-011)
