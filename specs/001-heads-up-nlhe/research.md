@@ -1,40 +1,52 @@
-# Research & Technical Decisions
-
-**Feature**: Heads Up NLHE Server & Bot
-**Date**: 2025-12-08
+# Research: Heads Up NLHE Server and Bot
 
 ## Technical Decisions
 
-### 1. WebSocket Library
-**Decision**: `Boost.Beast` (referencing `Boost.Asio`)
-**Rationale**: 
-- `Boost.Beast` is a robust, HTTP/WebSocket library built on top of `Boost.Asio`, the standard for C++ asynchronous I/O.
-- It provides the low-level control needed for handling connection states (grace periods, timeouts) accurately.
-- It is widely adopted and ensures long-term maintainability compared to smaller standalone libraries.
-**Alternatives Considered**: 
-- `uWebSockets`: Extremely performant but has a more unique API style and external dependencies (uSockets). Overkill for a simple 2-player server.
-- `websocketpp`: A solid choice, but `Beast` is generally preferred for new projects using modern Boost.
+### 1. Networking & Concurrency
+*   **Decision**: Single-threaded Asynchronous I/O using `Boost.Asio` and `Boost.Beast`.
+*   **Rationale**:
+    *   **Simplicity**: Avoids complex mutex locking for game state since all logic runs on a single `io_context` strand.
+    *   **Performance**: More than adequate for a single table with 2 players.
+    *   **Safety**: Eliminates race conditions in game logic.
+*   **Alternatives Considered**:
+    *   *Thread-per-client*: Scales poorly, requires complex locking for shared Table state.
+    *   *Multi-threaded thread pool*: Overkill for a single table; complexity of synchronization outweighs benefits.
 
-### 2. JSON Library
-**Decision**: `nlohmann/json`
-**Rationale**:
-- Offers the most intuitive "modern C++" API, treating JSON as a first-class data type.
-- Simplifies serialization/deserialization logic in the `common` library.
-- Performance impact is negligible for a turn-based card game.
-**Alternatives Considered**:
-- `RapidJSON`: Faster, but the API is more verbose and complex. Not necessary for this scale.
+### 2. Serialization Protocol
+*   **Decision**: JSON (via `nlohmann/json`).
+*   **Rationale**:
+    *   **Readability**: Human-readable, easy to debug.
+    *   **Flexibility**: Schema-less, easy to evolve.
+    *   **Standard**: User mandated `nlohmann/json`.
+*   **Alternatives Considered**:
+    *   *Protobuf*: More efficient, but requires compilation steps and less readable. Overkill for low-frequency poker moves.
 
-### 3. Testing Framework
-**Decision**: `Google Test` (gtest)
-**Rationale**:
-- The industry standard for C++ unit testing.
-- Excellent integration with CMake (via `FetchContent` or installed packages).
-- Supports powerful mocking (`gmock`) if needed for testing client/server interactions in isolation.
-**Alternatives Considered**:
-- `Catch2`: Excellent header-only library, but `gtest` structure fits better with a formal `tests/` directory layout.
+### 3. Game State Management
+*   **Decision**: Centralized `GameManager` owning `Table` and `Deck`.
+*   **Rationale**:
+    *   Encapsulates rule enforcement.
+    *   Separates networking (Server) from logic (GameManager).
+    *   Allows unit testing of game logic without networking.
 
-### 4. Build System
-**Decision**: `CMake`
-**Rationale**:
-- The universal build system for C++.
-- Allows easy dependency management (finding Boost, fetching gtest/json).
+### 4. Bot Implementation
+*   **Decision**: State machine driven by server messages.
+*   **Rationale**:
+    *   Bot needs to react to `GAME_STATE_UPDATE` or `REQUEST_ACTION`.
+    *   Blocking sleeps for "human delay" would block the network loop if single-threaded.
+    *   **Solution**: Use `asio::steady_timer` for delays to keep the event loop running.
+
+## Integration Patterns
+
+### WebSocket Message Structure
+*   **Format**: `{ "type": "MESSAGE_TYPE", "payload": { ... } }`
+*   **Types**:
+    *   `LOGIN`: Client -> Server (Identity)
+    *   `JOIN`: Client -> Server (Seat request)
+    *   `GAME_UPDATE`: Server -> Client (Full state or delta)
+    *   `ACTION_REQUEST`: Server -> Client (Your turn)
+    *   `ACTION`: Client -> Server (Fold/Call/Bet)
+    *   `ERROR`: Server -> Client (Reject)
+
+### Error Handling
+*   Server catches exceptions in message handlers and sends `ERROR` message to client.
+*   Connection drops handled by `Boost.Beast` disconnect handlers -> triggers "grace period" logic.

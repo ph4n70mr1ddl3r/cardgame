@@ -1,65 +1,48 @@
-# Data Model
+# Data Model: Heads Up NLHE
 
-## Enums
-
-### Suit
-- `HEARTS`, `DIAMONDS`, `CLUBS`, `SPADES`
-
-### Rank
-- `TWO` (2) ... `TEN` (10), `JACK` (11), `QUEEN` (12), `KING` (13), `ACE` (14)
-
-### GameState
-- `WAITING_FOR_PLAYERS`: < 2 players connected/active
-- `PREFLOP`: Blinds posted, hole cards dealt
-- `FLOP`: 3 community cards dealt
-- `TURN`: 4th community card dealt
-- `RIVER`: 5th community card dealt
-- `SHOWDOWN`: Hands revealed, winner determined
-- `HAND_END`: Pot distributed, waiting for next hand
-
-### PlayerStatus
-- `ACTIVE`: Connected and playing
-- `DISCONNECTED`: Connection lost, grace period active
-- `SITTING_OUT`: Grace period expired or manually sat out (folded)
-
-### ActionType
-- `FOLD`
-- `CHECK`
-- `CALL`
-- `BET`
-- `RAISE`
-- `ALL_IN`
-
-## Entities
+## Core Entities
 
 ### Card
-- `rank`: Rank
-- `suit`: Suit
-
-### Deck
-- `cards`: List<Card>
-- Methods: `shuffle()`, `draw()`
+*   **Rank**: 2-10, J, Q, K, A
+*   **Suit**: Spades, Hearts, Diamonds, Clubs
+*   **Representation**: Integer (0-51) or String (e.g., "Ah", "Kd")
 
 ### Player
-- `id`: String (UUID or Name)
-- `stack`: Integer (Chips/BB)
-- `hole_cards`: List<Card> (2 cards, empty if folded)
-- `current_bet`: Integer (Amount bet in current street)
-- `status`: PlayerStatus
-- `disconnect_timestamp`: Timestamp (nullable, set when connection lost)
-- `is_folded`: Boolean
-
-### Pot
-- `amount`: Integer
-- `contributors`: List<PlayerID> (For handling side pots if we expand, main pot for now)
+*   **ID**: String (Unique identifier)
+*   **Name**: String
+*   **Stack**: Integer (Chips in cents or smallest unit)
+*   **Status**: Enum { ACTIVE, SITTING_OUT, DISCONNECTED }
+*   **Hole Cards**: [Card, Card] (Private)
+*   **Current Bet**: Integer (In current street)
+*   **Has Folded**: Boolean
 
 ### Table
-- `id`: String
-- `players`: Map<Position, Player> (Position 0 (SB) and 1 (BB) for Heads Up)
-- `board`: List<Card> (0 to 5 community cards)
-- `pot`: Integer (Total pot size)
-- `dealer_pos`: Integer (0 or 1)
-- `current_turn`: Integer (Position of player to act)
-- `state`: GameState
-- `min_raise`: Integer
-- `big_blind_amount`: Integer (Default 2)
+*   **ID**: String
+*   **Players**: List[Player] (Max 2)
+*   **Button Position**: Integer (Index of dealer)
+*   **Pot**: Integer
+*   **Community Cards**: List[Card] (0 to 5)
+*   **Deck**: List[Card] (Remaining)
+*   **Config**: GameConfig
+
+### GameConfig
+*   **Small Blind**: Integer
+*   **Big Blind**: Integer
+*   **Turn Timeout**: Integer (Seconds)
+*   **Disconnect Timeout**: Integer (Seconds)
+
+## Game States (Finite State Machine)
+
+1.  **WAITING_FOR_PLAYERS**: < 2 active players.
+2.  **STARTING_HAND**: 2 players ready. Posts blinds. Deals cards.
+3.  **PRE_FLOP**: Betting round 1.
+4.  **FLOP**: Deal 3 community cards. Betting round 2.
+5.  **TURN**: Deal 1 community card. Betting round 3.
+6.  **RIVER**: Deal 1 community card. Betting round 4.
+7.  **SHOWDOWN**: Reveal cards. Evaluate hands. Award pot.
+8.  **HAND_END**: Cleanup. Check stacks (Top-up). Rotate button.
+
+## Relationships
+*   Server 1--1 Table
+*   Table 1--N Player (N<=2)
+*   Player 1--1 Connection (Session)

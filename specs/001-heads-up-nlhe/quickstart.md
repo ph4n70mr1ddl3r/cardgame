@@ -1,38 +1,39 @@
 # Quickstart
 
 ## Prerequisites
-- **C++ Compiler**: GCC 10+ or Clang 11+ (C++20 support)
-- **CMake**: 3.20+
-- **Make** or **Ninja**
+*   Linux
+*   C++20 Compiler (GCC 10+ or Clang 10+)
+*   CMake 3.15+
+*   Boost 1.70+ (`libboost-system`, `libboost-thread` if needed by older beast)
+*   nlohmann-json (likely vendored or system installed)
 
-## Dependencies (Fetched automatically via CMake)
-- Boost (Beast, Asio)
-- nlohmann/json
-- Google Test
+## Build
 
-## Building
 ```bash
-mkdir build
-cd build
+mkdir build && cd build
 cmake ..
-make -j4
+make -j$(nproc)
 ```
 
-## Running the Server
+## Run Server
+
 ```bash
+# Defaults: port 8080
 ./bin/poker_server --port 8080
 ```
 
-## Running the Bot Client
+## Run Bot Client
+
 ```bash
-./bin/poker_client localhost 8080 Bot_1
-```
-(Run a second instance for the second player)
-```bash
-./bin/poker_client localhost 8080 Bot_2
+# Start bot 1
+./bin/poker_client --server localhost --port 8080 --name bot1
+
+# Start bot 2
+./bin/poker_client --server localhost --port 8080 --name bot2
 ```
 
 ## Testing
+
 ```bash
 cd build
 ctest --output-on-failure

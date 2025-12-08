@@ -1,10 +1,8 @@
-# Game Protocol (WebSocket/JSON)
+# Game Protocol (JSON over WebSocket)
 
-Communication is event-driven via WebSockets. All messages are JSON objects.
+## Message Format
 
-## Message Structure
-
-Every message has a `type` field.
+All messages are JSON objects.
 
 ```json
 {
@@ -13,97 +11,101 @@ Every message has a `type` field.
 }
 ```
 
-## Client -> Server Messages
+## Client -> Server
 
-### 1. Login
-Sent immediately after connection to identify the player.
+### LOGIN
+Identifies the player.
 ```json
 {
   "type": "LOGIN",
   "payload": {
-    "player_id": "Bot_Alice"
+    "player_id": "bot-1"
   }
 }
 ```
 
-### 2. Action
-Sent when it is the player's turn (`REQUEST_ACTION` received).
+### ACTION
+Performs a game action.
 ```json
 {
   "type": "ACTION",
   "payload": {
-    "action": "BET", // FOLD, CHECK, CALL, BET, RAISE
-    "amount": 100    // Optional, required for BET/RAISE. Total amount (not increment).
+    "action": "CHECK" | "CALL" | "BET" | "RAISE" | "FOLD",
+    "amount": 100 // Optional, required for BET/RAISE. Absolute total bet amount? Or incremental?
+                  // Standard is usually "total amount put in pot this round" or "incremental".
+                  // Let's specify: Amount to add to the pot (incremental) or Total wager?
+                  // For simplicity: Total amount for this street (e.g. Raise to X).
+                  // But standard poker is "Raise To".
+    "amount": 200 // "Raise to 200"
   }
 }
 ```
 
-### 3. Top Up
-Request to refill stack to 100BB (only valid between hands or if supported).
-```json
-{
-  "type": "TOP_UP",
-  "payload": {}
-}
-```
+## Server -> Client
 
-## Server -> Client Messages
-
-### 1. Game State Update
-Broadcasted whenever public state changes (cards dealt, action made, player joined).
+### GAME_STATE
+Sent on any state change.
 ```json
 {
   "type": "GAME_STATE",
   "payload": {
-    "state": "FLOP",
+    "state": "PRE_FLOP",
     "pot": 150,
-    "board": [{"rank": "ACE", "suit": "SPADES"}, ...],
+    "community_cards": ["Ah", "Kd", "2s"],
     "players": [
-      { "id": "Bot_Alice", "stack": 950, "bet": 50, "is_active": true, "has_folded": false },
-      { "id": "Bot_Bob", "stack": 1000, "bet": 0, "is_active": true, "has_folded": false }
-    ],
-    "dealer_pos": 0,
-    "current_turn": 1
-  }
-}
-```
-
-### 2. Request Action
-Sent specifically to the player whose turn it is.
-```json
-{
-  "type": "REQUEST_ACTION",
-  "payload": {
-    "valid_actions": ["FOLD", "CALL", "RAISE"],
-    "min_raise": 20,
-    "current_bet": 50,
-    "call_amount": 50
-  }
-}
-```
-
-### 3. Hole Cards
-Sent privately to a player when cards are dealt.
-```json
-{
-  "type": "HOLE_CARDS",
-  "payload": {
-    "cards": [
-      {"rank": "TEN", "suit": "HEARTS"},
-      {"rank": "NINE", "suit": "HEARTS"}
+      {
+        "id": "bot-1",
+        "stack": 9850,
+        "bet": 50,
+        "active": true,
+        "has_folded": false,
+        "is_turn": false
+      },
+      {
+        "id": "bot-2",
+        "stack": 9900,
+        "bet": 100,
+        "active": true,
+        "has_folded": false,
+        "is_turn": true
+      }
     ]
   }
 }
 ```
 
-### 4. Error
-Sent when an invalid action occurs.
+### DEAL_CARDS
+Sent privately to each player at start of hand.
+```json
+{
+  "type": "DEAL_CARDS",
+  "payload": {
+    "cards": ["Th", "Tc"]
+  }
+}
+```
+
+### REQUEST_ACTION
+Sent when it is a specific player's turn.
+```json
+{
+  "type": "REQUEST_ACTION",
+  "payload": {
+    "timeout_ms": 30000,
+    "valid_actions": ["CALL", "RAISE", "FOLD"],
+    "min_raise": 200
+  }
+}
+```
+
+### ERROR
+Sent when an action is invalid.
 ```json
 {
   "type": "ERROR",
   "payload": {
-    "code": "INVALID_MOVE",
-    "message": "Cannot Check when facing a bet."
+    "code": "INVALID_BET",
+    "message": "Bet amount below minimum raise."
   }
 }
 ```
