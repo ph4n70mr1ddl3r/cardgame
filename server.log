@@ -1,11 +1,11 @@
 Poker Server running on port 8083
-2025-12-08 09:44:40 [INFO] Player joined: Bot1 at pos 0
-2025-12-08 09:44:40 [INFO] Player joined: Bot2 at pos 1
-2025-12-08 09:44:40 [INFO] Starting game...
-Action from Bot1: RAISE 4
+2025-12-08 15:01:11 [INFO] Player joined: Bot2 at pos 0
+2025-12-08 15:01:11 [INFO] Player joined: Bot1 at pos 1
+2025-12-08 15:01:11 [INFO] Starting game...
+Action from Bot2: FOLD 0
 read: End of file
 write: Operation canceled
-2025-12-08 09:44:47 [INFO] Player reconnected: Bot1
-Action from Bot2: ALL_IN 0
+2025-12-08 15:01:18 [INFO] Player reconnected: Bot1
+Action from Bot1: ALL_IN 0
 
 Stopping server...

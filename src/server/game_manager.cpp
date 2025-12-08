@@ -2,10 +2,11 @@
 #include "logger.hpp"
 #include <iostream>
 #include <algorithm>
+#include <boost/asio.hpp>
 
 namespace poker {
 
-GameManager::GameManager() {}
+GameManager::GameManager(boost::asio::io_context& ioc) : timeout_manager(ioc) {}
 
 void GameManager::onPlayerJoin(std::shared_ptr<Player> player) {
     auto existing = table.getPlayer(player->id);

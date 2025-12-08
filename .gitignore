@@ -10,6 +10,7 @@ out/
 *.dylib
 *.exe
 *.dll
+*.prof*
 
 # CMake
 CMakeCache.txt
