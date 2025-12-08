@@ -1,115 +1,79 @@
 # Tasks: Heads Up NLHE Server and Bot Client
 
-**Input**: Design documents from `specs/001-heads-up-nlhe/`
-**Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/
+**Feature**: `001-heads-up-nlhe`
+**Spec**: `specs/001-heads-up-nlhe/spec.md`
+**Plan**: `specs/001-heads-up-nlhe/plan.md`
+**Status**: Pending
 
-**Tests**: Tests are included as foundational and integration steps where appropriate, using Google Test as per plan.
+## Phase 1: Setup
+**Goal**: Initialize project structure and build system for C++20 with Boost.Beast.
 
-**Organization**: Tasks are grouped by user story, with US1 (Core) and US3 (Disconnects) being Priority 1, followed by US2 (Top-Up).
+- [ ] T001 Create root CMakeLists.txt with C++20 standard and Boost dependencies in `CMakeLists.txt`
+- [ ] T002 Setup common library structure and CMake in `src/common/CMakeLists.txt`
+- [ ] T003 Setup server executable structure and CMake in `src/server/CMakeLists.txt`
+- [ ] T004 Setup client executable structure and CMake in `src/client/CMakeLists.txt`
+- [ ] T005 Setup unit test infrastructure with GoogleTest in `tests/unit/CMakeLists.txt`
 
-## Format: `[ID] [P?] [Story] Description`
+## Phase 2: Foundation (Shared Logic)
+**Goal**: Implement core poker logic and protocol definitions used by both server and client.
+**Blocking**: Must be completed before User Stories.
 
-- **[P]**: Can run in parallel
-- **[Story]**: User Story label (US1, US2, US3)
-- Path convention: `src/common/`, `src/server/`, `src/client/`
+- [ ] T006 [P] Implement Card class (Rank, Suit, parsing) in `src/common/card.hpp` and `src/common/card.cpp`
+- [ ] T007 [P] Implement Deck class (shuffling, dealing) in `src/common/deck.hpp` and `src/common/deck.cpp`
+- [ ] T008 [P] Implement HandEvaluator class (7-card evaluation) in `src/common/hand_evaluator.hpp` and `src/common/hand_evaluator.cpp`
+- [ ] T009 [P] Define Protocol structs (Message, Payload) and JSON serializers in `src/common/protocol.hpp`
+- [ ] T010 Create unit tests for Card and HandEvaluator in `tests/unit/test_card.cpp` and `tests/unit/test_hand_evaluator.cpp`
 
-## Phase 1: Setup (Shared Infrastructure)
+## Phase 3: User Story 1 - Core Gameplay & Bot Logic
+**Goal**: Server hosts a game, 2 bots connect and play valid hands.
+**Priority**: P1
 
-**Purpose**: Project initialization, build system, and dependencies.
+- [ ] T011 [US1] Implement Player class (Stack, Status, Hole Cards) in `src/server/player.hpp`
+- [ ] T012 [US1] Implement Table class (Pot, Board, Player management) in `src/server/table.hpp` and `src/server/table.cpp`
+- [ ] T013 [US1] Implement GameManager State Machine (PreFlop, Flop, etc.) in `src/server/game_manager.hpp` and `src/server/game_manager.cpp`
+- [ ] T014 [US1] Implement Session class (WebSocket read/write) in `src/server/session.hpp`
+- [ ] T015 [US1] Implement Server class (Acceptor, Room management) in `src/server/server.hpp` and `src/server/server.cpp`
+- [ ] T016 [US1] Implement NetworkClient class (WebSocket connection) in `src/client/network_client.hpp` and `src/client/network_client.cpp`
+- [ ] T017 [US1] Implement BotState class (Random strategy, Action generation) in `src/client/bot_state.hpp`
+- [ ] T018 [US1] Implement Client main loop (Connect, Login, Event Loop) in `src/client/main.cpp`
+- [ ] T019 [US1] Wire up Game Logic to Server Messages (Protocol handling) in `src/server/server.cpp`
+- [ ] T020 [US1] Create integration test script for full game loop in `tests/integration/test_core_gameplay.py`
 
-- [x] T001 Create project directory structure (`src/common`, `src/server`, `src/client`, `tests/unit`, `tests/integration`)
-- [x] T002 Create root `CMakeLists.txt` with C++20 standard and compiler warnings
-- [x] T003 Configure `CMakeLists.txt` to fetch dependencies: Boost (Beast/Asio), nlohmann/json, GoogleTest
-- [x] T004 [P] Create `tests/CMakeLists.txt` and `src/CMakeLists.txt` sub-project definitions
-- [x] T005 [P] Setup `.gitignore` for C++ build artifacts
+## Phase 4: User Story 3 - Disconnection & Timeouts
+**Goal**: Handle player disconnects, grace periods, and removal.
+**Priority**: P1
 
----
+- [ ] T021 [US3] Implement TimeoutManager for tracking last activity in `src/server/timeout_manager.hpp`
+- [ ] T022 [US3] Add disconnection detection and status update in `src/server/game_manager.cpp`
+- [ ] T023 [US3] Implement Reconnection logic (match player_id to existing seat) in `src/server/game_manager.cpp`
+- [ ] T024 [US3] Implement "Sit Out" and Player Removal logic after timeouts in `src/server/table.cpp`
+- [ ] T025 [US3] Verify disconnect handling with integration test in `tests/integration/test_disconnect.py`
 
-## Phase 2: Foundational (Blocking Prerequisites)
+## Phase 5: User Story 2 - Automatic Stack Top-Up
+**Goal**: Bots automatically rebuy when stack is low.
+**Priority**: P2
 
-**Purpose**: Core domain entities and shared protocol definitions required by both Server and Client.
+- [ ] T026 [US2] Update BotState to check stack < 5BB and send top-up request in `src/client/bot_state.hpp`
+- [ ] T027 [US2] Implement top-up request handling in `src/server/game_manager.cpp`
+- [ ] T028 [US2] Add unit test for top-up logic in `tests/unit/test_game_manager.cpp`
 
-**⚠️ CRITICAL**: Must be complete before User Stories.
+## Phase 6: Polish
+**Goal**: structured logging, configuration, and final verification.
 
-- [x] T006 Create `src/common/types.hpp` with Enums (Suit, Rank, GameState, PlayerStatus, ActionType)
-- [x] T007 [P] Implement `src/common/card.hpp` and `src/common/card.cpp` (Card struct, Deck class with shuffle/draw)
-- [x] T008 [P] Create `tests/unit/test_card.cpp` and implement unit tests for Deck shuffling and drawing
-- [x] T009 Implement `src/common/protocol.hpp` defining JSON message structures (Login, Action, GameState, etc.) using `nlohmann/json`
-- [x] T010 [P] Implement `src/common/hand_evaluator.hpp` and `src/common/hand_evaluator.cpp` for basic NLHE hand ranking
-- [x] T011 [P] Create `tests/unit/test_hand_evaluator.cpp` to verify hand ranking logic
+- [ ] T029 Implement structured JSON logger in `src/server/logger.hpp`
+- [ ] T030 Add command-line argument parsing (timeouts, ports) in `src/server/main.cpp`
+- [ ] T031 Final integration test suite run in `tests/run_all.sh`
 
-**Checkpoint**: Shared library builds, unit tests for logic pass.
+## Implementation Strategy
+- **MVP (Phase 3)**: Focus on getting two bots to play a full hand (Deal -> Bet -> Showdown) without crashing.
+- **Robustness (Phase 4)**: Once gameplay works, add the "happy path" breakers (disconnects).
+- **Features (Phase 5)**: Add the auto-rebuy feature last as it's an enhancement to the core loop.
 
----
+## Dependencies
+- US1 (Core) depends on Foundation (Cards/Protocol)
+- US3 (Disconnects) depends on US1 (need a running game to disconnect from)
+- US2 (Top-Up) depends on US1 (need a stack to deplete)
 
-## Phase 3: User Story 1 - Core Gameplay & Bot Logic (Priority: P1) 🎯 MVP
-
-**Goal**: A functional server hosting a Heads-Up game and autonomous bots playing hands.
-
-**Independent Test**: Connect 2 bots, verify they play through hands (Deal -> Bet -> Showdown) without crashing.
-
-### Implementation for User Story 1
-
-- [x] T012 [US1] Create `src/server/player.hpp` to track socket session, stack, hole cards, and status
-- [x] T038 [US1] Create `tests/unit/test_table.cpp` to test blind posting, pot calculation, and state updates (Test-First)
-- [x] T013 [US1] Create `src/server/table.hpp` and `src/server/table.cpp` managing GameState, Pot, and Deck
-- [x] T039 [US1] Create `tests/unit/test_game_manager.cpp` to test game flow transitions (preflop -> flop -> ...) (Test-First)
-- [x] T014 [US1] Implement `src/server/game_manager.cpp` handling state transitions
-- [x] T015 [US1] Implement `src/server/server.cpp` using Boost.Beast to accept WebSocket connections and route messages
-- [x] T016 [US1] Implement `src/server/main.cpp` to start the server, parsing command-line args for port and timeouts (FR-011)
-- [x] T017 [P] [US1] Create `src/client/bot_state.hpp` to track client-side game view
-- [x] T018 [P] [US1] Implement `src/client/strategy.cpp` (as header) for random valid action selection
-- [x] T019 [US1] Implement `src/client/network_client.cpp` using Boost.Beast to connect and handle messages
-- [x] T020 [US1] Implement `src/client/main.cpp` with random delay loop (FR-005)
-- [x] T021 [P] [US1] Create `tests/integration/test_core_gameplay.py` to spawn server and 2 bots and assert exit code/logs
-
-**Checkpoint**: Core game loop functional. Bots can play indefinitely (until bust).
-
----
-
-## Phase 4: User Story 3 - Disconnection & Timeout Management (Priority: P1)
-
-**Goal**: Robust handling of player dropouts and turn timeouts.
-
-**Independent Test**: Kill a bot process during a hand; Server should wait grace period, then fold/sit-out player.
-
-### Implementation for User Story 3
-
-- [x] T022 [US3] Update `src/server/server.cpp` to detect WebSocket disconnection events (handled in initial impl)
-- [x] T023 [US3] Implement `src/server/timeout_manager.hpp` using Boost.Asio timers for turn limits and grace periods
-- [x] T024 [US3] Update `src/server/table.cpp` to handle `DISCONNECTED` state and trigger "sit out" (FR-008)
-- [x] T025 [US3] Implement logic in `src/server/game_manager.cpp` to fold players who timeout or disconnect
-- [x] T026 [US3] Implement player removal logic (FR-009) after extended "sit out" duration
-- [x] T027 [US3] Update `src/client/network_client.cpp` to attempt reconnection on connection loss
-- [x] T028 [US3] Update `src/server/server.cpp` to handle `LOGIN` from a reconnecting player (restore session)
-
-**Checkpoint**: Server survives client crashes. Reconnection restores state.
-
----
-
-## Phase 5: User Story 2 - Automatic Stack Top-Up (Priority: P2)
-
-**Goal**: Bots automatically rebuy when low on chips to keep the simulation running.
-
-**Independent Test**: Manually set bot stack < 5BB, verify it requests top-up and stack resets to 100BB.
-
-### Implementation for User Story 2
-
-- [x] T029 [US2] Update `src/common/protocol.hpp` to ensure `TOP_UP` message is defined
-- [x] T030 [US2] Update `src/server/game_manager.cpp` to process `TOP_UP` messages (FR-006)
-- [x] T031 [US2] Add logic in `src/server/table.cpp` to validate top-up (only between hands or when allowed)
-- [x] T032 [US2] Update `src/client/bot_logic.cpp` to check stack size at Hand End
-- [x] T033 [US2] Implement logic to send `TOP_UP` request if stack < 5BB (FR-006)
-
-**Checkpoint**: Bots never run out of chips permanently.
-
----
-
-## Phase 6: Polish & Cross-Cutting Concerns
-
-**Purpose**: Final cleanup and non-functional requirements.
-
-- [x] T034 [P] Add detailed logging to `src/server/logger.hpp` (Game history, errors)
-- [x] T035 [P] Update `src/client/main.cpp` to parse command line args (host, port, bot name) (Done in initial impl)
-- [x] T036 Review `specs/001-heads-up-nlhe/quickstart.md` and verify instructions work
-- [x] T037 Ensure clean shutdown handling in `src/server/main.cpp` (SIGINT handler)
+## Parallel Execution
+- **Phase 2**: T006 (Card), T007 (Deck), T008 (Evaluator) can be built in parallel.
+- **Phase 3**: Client (T016-T018) and Server (T011-T015) can be developed somewhat independently if Protocol (T009) is solid.
