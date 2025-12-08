@@ -75,11 +75,11 @@
 
 - [x] T022 [US3] Update `src/server/server.cpp` to detect WebSocket disconnection events (handled in initial impl)
 - [x] T023 [US3] Implement `src/server/timeout_manager.hpp` using Boost.Asio timers for turn limits and grace periods
-- [ ] T024 [US3] Update `src/server/table.cpp` to handle `DISCONNECTED` state and trigger "sit out" (FR-008)
-- [ ] T025 [US3] Implement logic in `src/server/game_loop.cpp` to fold players who timeout or disconnect
-- [ ] T026 [US3] Implement player removal logic (FR-009) after extended "sit out" duration
-- [ ] T027 [US3] Update `src/client/network_client.cpp` to attempt reconnection on connection loss
-- [ ] T028 [US3] Update `src/server/server.cpp` to handle `LOGIN` from a reconnecting player (restore session)
+- [x] T024 [US3] Update `src/server/table.cpp` to handle `DISCONNECTED` state and trigger "sit out" (FR-008)
+- [x] T025 [US3] Implement logic in `src/server/game_loop.cpp` to fold players who timeout or disconnect
+- [x] T026 [US3] Implement player removal logic (FR-009) after extended "sit out" duration
+- [x] T027 [US3] Update `src/client/network_client.cpp` to attempt reconnection on connection loss
+- [x] T028 [US3] Update `src/server/server.cpp` to handle `LOGIN` from a reconnecting player (restore session)
 
 **Checkpoint**: Server survives client crashes. Reconnection restores state.
 
@@ -93,11 +93,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T029 [US2] Update `src/common/protocol.hpp` to ensure `TOP_UP` message is defined
-- [ ] T030 [US2] Update `src/server/game_loop.cpp` to process `TOP_UP` messages (FR-006)
-- [ ] T031 [US2] Add logic in `src/server/table.cpp` to validate top-up (only between hands or when allowed)
-- [ ] T032 [US2] Update `src/client/bot_logic.cpp` to check stack size at Hand End
-- [ ] T033 [US2] Implement logic to send `TOP_UP` request if stack < 5BB (FR-006)
+- [x] T029 [US2] Update `src/common/protocol.hpp` to ensure `TOP_UP` message is defined
+- [x] T030 [US2] Update `src/server/game_loop.cpp` to process `TOP_UP` messages (FR-006)
+- [x] T031 [US2] Add logic in `src/server/table.cpp` to validate top-up (only between hands or when allowed)
+- [x] T032 [US2] Update `src/client/bot_logic.cpp` to check stack size at Hand End
+- [x] T033 [US2] Implement logic to send `TOP_UP` request if stack < 5BB (FR-006)
 
 **Checkpoint**: Bots never run out of chips permanently.
 
@@ -107,7 +107,7 @@
 
 **Purpose**: Final cleanup and non-functional requirements.
 
-- [ ] T034 [P] Add detailed logging to `src/server/logger.hpp` (Game history, errors)
-- [ ] T035 [P] Update `src/client/main.cpp` to parse command line args (host, port, bot name) (Done in initial impl)
-- [ ] T036 Review `specs/001-heads-up-nlhe/quickstart.md` and verify instructions work
-- [ ] T037 Ensure clean shutdown handling in `src/server/main.cpp` (SIGINT handler)
+- [x] T034 [P] Add detailed logging to `src/server/logger.hpp` (Game history, errors)
+- [x] T035 [P] Update `src/client/main.cpp` to parse command line args (host, port, bot name) (Done in initial impl)
+- [x] T036 Review `specs/001-heads-up-nlhe/quickstart.md` and verify instructions work
+- [x] T037 Ensure clean shutdown handling in `src/server/main.cpp` (SIGINT handler)

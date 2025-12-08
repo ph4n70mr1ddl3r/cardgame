@@ -53,6 +53,50 @@ int Table::activePlayerCount() const {
     return count;
 }
 
+void Table::markDisconnected(const std::string& playerId) {
+    auto p = getPlayer(playerId);
+    if (p) {
+        p->status = PlayerStatus::DISCONNECTED;
+    }
+}
+
+void Table::markSittingOut(const std::string& playerId) {
+    auto p = getPlayer(playerId);
+    if (p) {
+        p->status = PlayerStatus::SITTING_OUT;
+        p->is_folded = true; // Auto-fold if sitting out
+    }
+}
+
+void Table::markActive(const std::string& playerId) {
+    auto p = getPlayer(playerId);
+    if (p) {
+        p->status = PlayerStatus::ACTIVE;
+    }
+}
+
+bool Table::canTopUp(const std::string& playerId) {
+    auto p = getPlayer(playerId);
+    if (!p) return false;
+    
+    // Allow top up if game is not in active play state regarding this player
+    // Safe states: Waiting, Hand End
+    if (state == GameState::WAITING_FOR_PLAYERS || state == GameState::HAND_END) return true;
+    
+    // Also allow if player is not in the current hand (Sitting Out)
+    if (p->status == PlayerStatus::SITTING_OUT) return true;
+    
+    // If folded, technically safe to top up for NEXT hand
+    if (p->is_folded) return true;
+    
+    return false;
+}
+
+void Table::topUpPlayer(const std::string& playerId) {
+    auto p = getPlayer(playerId);
+    if (p) p->stack = 100;
+}
+
 void Table::resetDeck() {
     deck.reset();
     deck.shuffle();

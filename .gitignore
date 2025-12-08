@@ -23,3 +23,15 @@ Makefile
 .idea/
 *.swp
 *.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Logs and Env
+*.log
+.env
+.env*

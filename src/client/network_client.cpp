@@ -19,6 +19,7 @@ NetworkClient::NetworkClient(net::io_context& ioc, std::string host, std::string
       port_(std::move(port)),
       player_id_(std::move(player_id)),
       timer_(ioc),
+      reconnect_timer_(ioc),
       state_()
 {
     state_.my_id = player_id_;
@@ -29,9 +30,23 @@ void NetworkClient::run() {
         beast::bind_front_handler(&NetworkClient::on_resolve, this));
 }
 
+void NetworkClient::wait_and_reconnect() {
+    std::cerr << "Attempting reconnection in 5 seconds..." << std::endl;
+    reconnect_timer_.expires_after(std::chrono::seconds(5));
+    reconnect_timer_.async_wait(beast::bind_front_handler(&NetworkClient::on_reconnect_timer, this));
+}
+
+void NetworkClient::on_reconnect_timer(beast::error_code ec) {
+    if (ec) return;
+    write_queue_.clear();
+    buffer_.consume(buffer_.size());
+    run();
+}
+
 void NetworkClient::on_resolve(beast::error_code ec, tcp::resolver::results_type results) {
     if(ec) {
         std::cerr << "Resolve failed: " << ec.message() << std::endl;
+        wait_and_reconnect();
         return;
     }
     
@@ -42,6 +57,7 @@ void NetworkClient::on_resolve(beast::error_code ec, tcp::resolver::results_type
 void NetworkClient::on_connect(beast::error_code ec, tcp::resolver::results_type::endpoint_type ep) {
     if(ec) {
         std::cerr << "Connect failed: " << ec.message() << std::endl;
+        wait_and_reconnect();
         return;
     }
     
@@ -53,6 +69,7 @@ void NetworkClient::on_connect(beast::error_code ec, tcp::resolver::results_type
 void NetworkClient::on_handshake(beast::error_code ec) {
     if(ec) {
         std::cerr << "Handshake failed: " << ec.message() << std::endl;
+        wait_and_reconnect();
         return;
     }
     
@@ -75,9 +92,8 @@ void NetworkClient::do_read() {
 void NetworkClient::on_read(beast::error_code ec, std::size_t bytes_transferred) {
     boost::ignore_unused(bytes_transferred);
     if(ec) {
-         if (ec != websocket::error::closed) {
-             std::cerr << "Read failed: " << ec.message() << std::endl;
-         }
+         std::cerr << "Read failed/Closed: " << ec.message() << std::endl;
+         wait_and_reconnect();
          return;
     }
     
@@ -105,6 +121,17 @@ void NetworkClient::processMessage(const std::string& data) {
                     state_.my_stack = p.stack;
                 }
             }
+            
+            // Auto Top-Up
+            if (state_.game_state == GameState::HAND_END && state_.my_stack < 5) {
+                Message m_top; 
+                m_top.type = MSG_TOP_UP; 
+                m_top.payload = json::object();
+                json j_top = m_top;
+                send(j_top.dump());
+                std::cout << "Stack low (" << state_.my_stack << "), requesting Top Up." << std::endl;
+            }
+
         } else if (msg.type == MSG_HOLE_CARDS) {
             auto pl = msg.payload.get<HoleCardsPayload>();
             state_.my_hole_cards = pl.cards;
@@ -165,6 +192,7 @@ void NetworkClient::on_write(beast::error_code ec, std::size_t bytes_transferred
     boost::ignore_unused(bytes_transferred);
     if(ec) {
         std::cerr << "Write failed: " << ec.message() << std::endl;
+        wait_and_reconnect();
         return;
     }
     write_queue_.pop_front();

@@ -64,7 +64,9 @@ public:
             } else if (msg.type == MSG_ACTION) {
                 ActionPayload p = msg.payload.get<ActionPayload>();
                 game_manager_.onPlayerAction(player_id_, p);
-            } 
+            } else if (msg.type == MSG_TOP_UP) {
+                game_manager_.onPlayerTopUp(player_id_);
+            }
         } catch (const std::exception& e) {
             std::cerr << "JSON Error: " << e.what() << std::endl;
         }

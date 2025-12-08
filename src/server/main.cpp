@@ -1,6 +1,7 @@
 #include "server.hpp"
 #include <iostream>
 #include <cstdlib>
+#include <boost/asio/signal_set.hpp>
 
 int main(int argc, char* argv[]) {
     try {
@@ -10,6 +11,13 @@ int main(int argc, char* argv[]) {
         }
 
         boost::asio::io_context ioc{1};
+        
+        boost::asio::signal_set signals(ioc, SIGINT, SIGTERM);
+        signals.async_wait([&](const boost::system::error_code&, int){
+            std::cout << "\nStopping server..." << std::endl;
+            ioc.stop();
+        });
+
         poker::Server server(ioc, port);
         
         std::cout << "Poker Server running on port " << port << std::endl;

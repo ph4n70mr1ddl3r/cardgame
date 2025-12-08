@@ -25,6 +25,10 @@ private:
     void send(const std::string& msg);
     void makeMove();
     void on_timer(boost::system::error_code ec);
+    
+    // Reconnection
+    void wait_and_reconnect();
+    void on_reconnect_timer(boost::system::error_code ec);
 
     boost::asio::ip::tcp::resolver resolver_;
     boost::beast::websocket::stream<boost::beast::tcp_stream> ws_;
@@ -35,6 +39,7 @@ private:
     std::deque<std::string> write_queue_;
     
     boost::asio::steady_timer timer_;
+    boost::asio::steady_timer reconnect_timer_;
     BotState state_;
 };
 

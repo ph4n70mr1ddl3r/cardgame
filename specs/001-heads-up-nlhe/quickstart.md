@@ -25,11 +25,11 @@ make -j4
 
 ## Running the Bot Client
 ```bash
-./bin/poker_client --server ws://localhost:8080 --name "Bot_1"
+./bin/poker_client localhost 8080 Bot_1
 ```
 (Run a second instance for the second player)
 ```bash
-./bin/poker_client --server ws://localhost:8080 --name "Bot_2"
+./bin/poker_client localhost 8080 Bot_2
 ```
 
 ## Testing

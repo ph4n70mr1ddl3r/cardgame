@@ -1,4 +1,5 @@
 #include "game_manager.hpp"
+#include "logger.hpp"
 #include <iostream>
 #include <algorithm>
 
@@ -7,23 +8,87 @@ namespace poker {
 GameManager::GameManager() {}
 
 void GameManager::onPlayerJoin(std::shared_ptr<Player> player) {
+    auto existing = table.getPlayer(player->id);
+    if (existing) {
+        Logger::log("Player reconnected: " + player->id);
+        existing->session = player->session;
+        table.markActive(existing->id);
+        
+        broadcastGameState();
+        
+        // Restore private state
+        if (!existing->hole_cards.empty() && sendToPlayer) {
+             HoleCardsPayload hcp;
+             hcp.cards = existing->hole_cards;
+             Message m; m.type = MSG_HOLE_CARDS; m.payload = hcp;
+             sendToPlayer(existing->id, m);
+        }
+        
+        // If it's their turn, resend request action
+        if (table.seats[table.current_turn] == existing && table.state != GameState::WAITING_FOR_PLAYERS && table.state != GameState::HAND_END) {
+            requestNextAction();
+        }
+        return;
+    }
+
     if (table.addPlayer(player)) {
-        std::cout << "Player joined: " << player->id << " at pos " << player->position << std::endl;
+        Logger::log("Player joined: " + player->id + " at pos " + std::to_string(player->position));
         broadcastGameState();
         
         if (table.activePlayerCount() == 2 && table.state == GameState::WAITING_FOR_PLAYERS) {
-            std::cout << "Starting game..." << std::endl;
+            Logger::log("Starting game...");
             startHand();
         }
     }
 }
 
 void GameManager::onPlayerDisconnect(const std::string& playerId) {
+    table.markDisconnected(playerId);
+    broadcastGameState();
+}
+
+void GameManager::onPlayerTimeout(const std::string& playerId) {
     auto p = table.getPlayer(playerId);
-    if (p) {
-        p->status = PlayerStatus::DISCONNECTED;
+    if (!p) return;
+
+    std::cout << "Player " << playerId << " timed out." << std::endl;
+    table.markSittingOut(playerId);
+
+    // If it's their turn, force action
+    if (table.seats[table.current_turn] == p && table.state != GameState::WAITING_FOR_PLAYERS && table.state != GameState::HAND_END) {
+        ActionPayload action;
+        int call_amount = table.current_bet - p->current_bet;
+        if (call_amount == 0) {
+            action.action = ActionType::CHECK;
+            action.amount = 0;
+        } else {
+            action.action = ActionType::FOLD;
+            action.amount = 0;
+        }
+        // Directly call internal handler or route through onPlayerAction
+        onPlayerAction(playerId, action);
+    }
+}
+
+void GameManager::onPlayerLeave(const std::string& playerId) {
+    std::cout << "Player " << playerId << " left." << std::endl;
+    table.removePlayer(playerId);
+    broadcastGameState();
+    
+    // If not enough players, reset to waiting
+    if (table.activePlayerCount() < 2 && table.state != GameState::WAITING_FOR_PLAYERS) {
+        std::cout << "Not enough players, resetting table..." << std::endl;
+        table.state = GameState::WAITING_FOR_PLAYERS;
+        table.resetHand();
         broadcastGameState();
-        // Timeout logic handled elsewhere (US3)
+    }
+}
+
+void GameManager::onPlayerTopUp(const std::string& playerId) {
+    if (table.canTopUp(playerId)) {
+        table.topUpPlayer(playerId);
+        std::cout << "Player " << playerId << " topped up." << std::endl;
+        broadcastGameState();
     }
 }
 

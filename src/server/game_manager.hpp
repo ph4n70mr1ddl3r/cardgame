@@ -16,6 +16,9 @@ public:
     void onPlayerJoin(std::shared_ptr<Player> player);
     void onPlayerAction(const std::string& playerId, const ActionPayload& action);
     void onPlayerDisconnect(const std::string& playerId);
+    void onPlayerTimeout(const std::string& playerId);
+    void onPlayerLeave(const std::string& playerId);
+    void onPlayerTopUp(const std::string& playerId);
     
     // Callbacks for IO
     std::function<void(const std::string&, const Message&)> sendToPlayer;

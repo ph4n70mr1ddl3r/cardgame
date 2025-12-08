@@ -20,6 +20,14 @@ public:
     int playerCount() const;
     int activePlayerCount() const;
 
+    // Player Status
+    void markDisconnected(const std::string& playerId);
+    void markSittingOut(const std::string& playerId);
+    void markActive(const std::string& playerId);
+    
+    bool canTopUp(const std::string& playerId);
+    void topUpPlayer(const std::string& playerId);
+
     // Game Actions
     void resetDeck();
     void dealHoleCards();
