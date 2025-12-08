@@ -1,0 +1,7 @@
+Poker Server running on port 8082
+Player joined: Bot1 at pos 0
+Player joined: Bot2 at pos 1
+Starting game...
+Action from Bot1: ALL_IN 0
+Action from Bot2: FOLD 0
+Action from Bot2: RAISE 4
