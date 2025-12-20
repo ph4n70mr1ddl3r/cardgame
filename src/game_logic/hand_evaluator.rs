@@ -1,0 +1,452 @@
+use crate::models::card::{Card, Rank};
+use std::collections::HashMap;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum HandRank {
+    HighCard = 1,
+    Pair = 2,
+    TwoPair = 3,
+    ThreeOfAKind = 4,
+    Straight = 5,
+    Flush = 6,
+    FullHouse = 7,
+    FourOfAKind = 8,
+    StraightFlush = 9,
+    RoyalFlush = 10,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EvaluatedHand {
+    pub hand_rank: HandRank,
+    pub rank_values: Vec<u8>, // For tie-breaking
+    pub description: String,
+}
+
+impl PartialOrd for EvaluatedHand {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for EvaluatedHand {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match self.hand_rank.cmp(&other.hand_rank) {
+            std::cmp::Ordering::Equal => self.rank_values.cmp(&other.rank_values),
+            ord => ord,
+        }
+    }
+}
+
+pub fn evaluate_hand(mut cards: Vec<Card>) -> EvaluatedHand {
+    assert_eq!(cards.len(), 7, "Must have exactly 7 cards (2 hole + 5 community)");
+    
+    // Sort cards by rank (descending)
+    cards.sort_by(|a, b| b.rank.cmp(&a.rank));
+    
+    // Try all combinations of 5 cards from 7
+    let mut best_hand = evaluate_five_cards(&cards[0..5].to_vec());
+    
+    // Check all 21 combinations of 5 from 7
+    for combo in combinations(&cards, 5) {
+        let eval = evaluate_five_cards(&combo);
+        if eval > best_hand {
+            best_hand = eval;
+        }
+    }
+    
+    best_hand
+}
+
+fn evaluate_five_cards(cards: &Vec<Card>) -> EvaluatedHand {
+    assert_eq!(cards.len(), 5);
+    
+    let is_flush = cards.iter().all(|c| c.suit == cards[0].suit);
+    let is_straight = check_straight(cards);
+    
+    let mut rank_counts: HashMap<Rank, usize> = HashMap::new();
+    for card in cards {
+        *rank_counts.entry(card.rank).or_insert(0) += 1;
+    }
+    
+    let mut counts: Vec<(usize, Rank)> = rank_counts.iter()
+        .map(|(rank, count)| (*count, *rank))
+        .collect();
+    counts.sort_by(|a, b| {
+        match b.0.cmp(&a.0) {
+            std::cmp::Ordering::Equal => b.1.cmp(&a.1),
+            ord => ord,
+        }
+    });
+    
+    // Royal Flush: A-K-Q-J-10 all same suit
+    if is_straight && is_flush && cards[0].rank == Rank::Ace {
+        return EvaluatedHand {
+            hand_rank: HandRank::RoyalFlush,
+            rank_values: vec![Rank::Ace.value()],
+            description: "Royal Flush".to_string(),
+        };
+    }
+    
+    // Straight Flush
+    if is_straight && is_flush {
+        let high_card = cards[0].rank.value();
+        return EvaluatedHand {
+            hand_rank: HandRank::StraightFlush,
+            rank_values: vec![high_card],
+            description: format!("{}-high Straight Flush", rank_name(cards[0].rank)),
+        };
+    }
+    
+    // Four of a Kind
+    if counts[0].0 == 4 {
+        return EvaluatedHand {
+            hand_rank: HandRank::FourOfAKind,
+            rank_values: vec![counts[0].1.value(), counts[1].1.value()],
+            description: format!("Four {}s", rank_name(counts[0].1)),
+        };
+    }
+    
+    // Full House
+    if counts[0].0 == 3 && counts[1].0 == 2 {
+        return EvaluatedHand {
+            hand_rank: HandRank::FullHouse,
+            rank_values: vec![counts[0].1.value(), counts[1].1.value()],
+            description: format!("{}s full of {}s", rank_name(counts[0].1), rank_name(counts[1].1)),
+        };
+    }
+    
+    // Flush
+    if is_flush {
+        let rank_values: Vec<u8> = cards.iter().map(|c| c.rank.value()).collect();
+        return EvaluatedHand {
+            hand_rank: HandRank::Flush,
+            rank_values,
+            description: format!("{}-high Flush", rank_name(cards[0].rank)),
+        };
+    }
+    
+    // Straight
+    if is_straight {
+        let high_card = cards[0].rank.value();
+        return EvaluatedHand {
+            hand_rank: HandRank::Straight,
+            rank_values: vec![high_card],
+            description: format!("{}-high Straight", rank_name(cards[0].rank)),
+        };
+    }
+    
+    // Three of a Kind
+    if counts[0].0 == 3 {
+        return EvaluatedHand {
+            hand_rank: HandRank::ThreeOfAKind,
+            rank_values: vec![counts[0].1.value(), counts[1].1.value(), counts[2].1.value()],
+            description: format!("Three {}s", rank_name(counts[0].1)),
+        };
+    }
+    
+    // Two Pair
+    if counts[0].0 == 2 && counts[1].0 == 2 {
+        return EvaluatedHand {
+            hand_rank: HandRank::TwoPair,
+            rank_values: vec![counts[0].1.value(), counts[1].1.value(), counts[2].1.value()],
+            description: format!("Two Pair, {}s and {}s", rank_name(counts[0].1), rank_name(counts[1].1)),
+        };
+    }
+    
+    // One Pair
+    if counts[0].0 == 2 {
+        return EvaluatedHand {
+            hand_rank: HandRank::Pair,
+            rank_values: vec![counts[0].1.value(), counts[1].1.value(), counts[2].1.value(), counts[3].1.value()],
+            description: format!("Pair of {}s", rank_name(counts[0].1)),
+        };
+    }
+    
+    // High Card
+    let rank_values: Vec<u8> = cards.iter().map(|c| c.rank.value()).collect();
+    EvaluatedHand {
+        hand_rank: HandRank::HighCard,
+        rank_values,
+        description: format!("{}-high", rank_name(cards[0].rank)),
+    }
+}
+
+fn check_straight(cards: &[Card]) -> bool {
+    let values: Vec<u8> = cards.iter().map(|c| c.rank.value()).collect();
+    
+    // Check regular straight
+    if values.windows(2).all(|w| w[0] == w[1] + 1) {
+        return true;
+    }
+    
+    // Check A-2-3-4-5 (wheel)
+    if values == vec![14, 5, 4, 3, 2] {
+        return true;
+    }
+    
+    false
+}
+
+fn combinations(items: &[Card], k: usize) -> Vec<Vec<Card>> {
+    let n = items.len();
+    if k > n {
+        return vec![];
+    }
+    
+    let mut result = Vec::new();
+    let mut combo = Vec::new();
+    combine_helper(items, k, 0, &mut combo, &mut result);
+    result
+}
+
+fn combine_helper(
+    items: &[Card],
+    k: usize,
+    start: usize,
+    combo: &mut Vec<Card>,
+    result: &mut Vec<Vec<Card>>,
+) {
+    if combo.len() == k {
+        result.push(combo.clone());
+        return;
+    }
+    
+    for i in start..items.len() {
+        combo.push(items[i]);
+        combine_helper(items, k, i + 1, combo, result);
+        combo.pop();
+    }
+}
+
+fn rank_name(rank: Rank) -> &'static str {
+    match rank {
+        Rank::Two => "Two",
+        Rank::Three => "Three",
+        Rank::Four => "Four",
+        Rank::Five => "Five",
+        Rank::Six => "Six",
+        Rank::Seven => "Seven",
+        Rank::Eight => "Eight",
+        Rank::Nine => "Nine",
+       Rank::Ten => "Ten",
+        Rank::Jack => "Jack",
+        Rank::Queen => "Queen",
+        Rank::King => "King",
+        Rank::Ace => "Ace",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::card::Suit;
+
+    fn make_card(rank: Rank, suit: Suit) -> Card {
+        Card::new(suit, rank)
+    }
+
+    #[test]
+    fn test_royal_flush() {
+        let cards = vec![
+            make_card(Rank::Ace, Suit::Hearts),
+            make_card(Rank::King, Suit::Hearts),
+            make_card(Rank::Queen, Suit::Hearts),
+            make_card(Rank::Jack, Suit::Hearts),
+            make_card(Rank::Ten, Suit::Hearts),
+            make_card(Rank::Two, Suit::Clubs),
+            make_card(Rank::Three, Suit::Clubs),
+        ];
+        
+        let eval = evaluate_hand(cards);
+        assert_eq!(eval.hand_rank, HandRank::RoyalFlush);
+    }
+
+    #[test]
+    fn test_straight_flush() {
+        let cards = vec![
+            make_card(Rank::Nine, Suit::Diamonds),
+            make_card(Rank::Eight, Suit::Diamonds),
+            make_card(Rank::Seven, Suit::Diamonds),
+            make_card(Rank::Six, Suit::Diamonds),
+            make_card(Rank::Five, Suit::Diamonds),
+            make_card(Rank::Two, Suit::Clubs),
+            make_card(Rank::Three, Suit::Clubs),
+        ];
+        
+        let eval = evaluate_hand(cards);
+        assert_eq!(eval.hand_rank, HandRank::StraightFlush);
+    }
+
+    #[test]
+    fn test_four_of_a_kind() {
+        let cards = vec![
+            make_card(Rank::King, Suit::Hearts),
+            make_card(Rank::King, Suit::Diamonds),
+            make_card(Rank::King, Suit::Clubs),
+            make_card(Rank::King, Suit::Spades),
+            make_card(Rank::Ace, Suit::Hearts),
+            make_card(Rank::Two, Suit::Clubs),
+            make_card(Rank::Three, Suit::Clubs),
+        ];
+        
+        let eval = evaluate_hand(cards);
+        assert_eq!(eval.hand_rank, HandRank::FourOfAKind);
+    }
+
+    #[test]
+    fn test_full_house() {
+        let cards = vec![
+            make_card(Rank::Ten, Suit::Hearts),
+            make_card(Rank::Ten, Suit::Diamonds),
+            make_card(Rank::Ten, Suit::Clubs),
+            make_card(Rank::Seven, Suit::Spades),
+            make_card(Rank::Seven, Suit::Hearts),
+            make_card(Rank::Two, Suit::Clubs),
+            make_card(Rank::Three, Suit::Clubs),
+        ];
+        
+        let eval = evaluate_hand(cards);
+        assert_eq!(eval.hand_rank, HandRank::FullHouse);
+    }
+
+    #[test]
+    fn test_flush() {
+        let cards = vec![
+            make_card(Rank::Ace, Suit::Spades),
+            make_card(Rank::Jack, Suit::Spades),
+            make_card(Rank::Nine, Suit::Spades),
+            make_card(Rank::Six, Suit::Spades),
+            make_card(Rank::Two, Suit::Spades),
+            make_card(Rank::King, Suit::Hearts),
+            make_card(Rank::Queen, Suit::Hearts),
+        ];
+        
+        let eval = evaluate_hand(cards);
+        assert_eq!(eval.hand_rank, HandRank::Flush);
+    }
+
+    #[test]
+    fn test_straight() {
+        let cards = vec![
+            make_card(Rank::Ten, Suit::Hearts),
+            make_card(Rank::Nine, Suit::Diamonds),
+            make_card(Rank::Eight, Suit::Clubs),
+            make_card(Rank::Seven, Suit::Spades),
+            make_card(Rank::Six, Suit::Hearts),
+            make_card(Rank::Two, Suit::Clubs),
+            make_card(Rank::Ace, Suit::Diamonds),
+        ];
+        
+        let eval = evaluate_hand(cards);
+        assert_eq!(eval.hand_rank, HandRank::Straight);
+    }
+
+    #[test]
+    fn test_wheel_straight() {
+        // A-2-3-4-5 (wheel/bicycle)
+        let cards = vec![
+            make_card(Rank::Ace, Suit::Hearts),
+            make_card(Rank::Five, Suit::Diamonds),
+            make_card(Rank::Four, Suit::Clubs),
+            make_card(Rank::Three, Suit::Spades),
+            make_card(Rank::Two, Suit::Hearts),
+            make_card(Rank::King, Suit::Clubs),
+            make_card(Rank::Queen, Suit::Diamonds),
+        ];
+        
+        let eval = evaluate_hand(cards);
+        assert_eq!(eval.hand_rank, HandRank::Straight);
+    }
+
+    #[test]
+    fn test_three_of_a_kind() {
+        let cards = vec![
+            make_card(Rank::Jack, Suit::Hearts),
+            make_card(Rank::Jack, Suit::Diamonds),
+            make_card(Rank::Jack, Suit::Clubs),
+            make_card(Rank::King, Suit::Spades),
+            make_card(Rank::Nine, Suit::Hearts),
+            make_card(Rank::Two, Suit::Clubs),
+            make_card(Rank::Three, Suit::Diamonds),
+        ];
+        
+        let eval = evaluate_hand(cards);
+        assert_eq!(eval.hand_rank, HandRank::ThreeOfAKind);
+    }
+
+    #[test]
+    fn test_two_pair() {
+        let cards = vec![
+            make_card(Rank::Queen, Suit::Hearts),
+            make_card(Rank::Queen, Suit::Diamonds),
+            make_card(Rank::Seven, Suit::Clubs),
+            make_card(Rank::Seven, Suit::Spades),
+            make_card(Rank::Ace, Suit::Hearts),
+            make_card(Rank::Two, Suit::Clubs),
+            make_card(Rank::Three, Suit::Diamonds),
+        ];
+        
+        let eval = evaluate_hand(cards);
+        assert_eq!(eval.hand_rank, HandRank::TwoPair);
+    }
+
+    #[test]
+    fn test_pair() {
+        let cards = vec![
+            make_card(Rank::Eight, Suit::Hearts),
+            make_card(Rank::Eight, Suit::Diamonds),
+            make_card(Rank::Ace, Suit::Clubs),
+            make_card(Rank::King, Suit::Spades),
+            make_card(Rank::Queen, Suit::Hearts),
+            make_card(Rank::Two, Suit::Clubs),
+            make_card(Rank::Three, Suit::Diamonds),
+        ];
+        
+        let eval = evaluate_hand(cards);
+        assert_eq!(eval.hand_rank, HandRank::Pair);
+    }
+
+    #[test]
+    fn test_high_card() {
+        let cards = vec![
+            make_card(Rank::Ace, Suit::Hearts),
+            make_card(Rank::King, Suit::Diamonds),
+            make_card(Rank::Jack, Suit::Clubs),
+            make_card(Rank::Nine, Suit::Spades),
+            make_card(Rank::Seven, Suit::Hearts),
+            make_card(Rank::Five, Suit::Clubs),
+            make_card(Rank::Three, Suit::Diamonds),
+        ];
+        
+        let eval = evaluate_hand(cards);
+        assert_eq!(eval.hand_rank, HandRank::HighCard);
+    }
+
+    #[test]
+    fn test_hand_comparison() {
+        let flush_cards = vec![
+            make_card(Rank::Ace, Suit::Spades),
+            make_card(Rank::Jack, Suit::Spades),
+            make_card(Rank::Nine, Suit::Spades),
+            make_card(Rank::Six, Suit::Spades),
+            make_card(Rank::Two, Suit::Spades),
+            make_card(Rank::King, Suit::Hearts),
+            make_card(Rank::Queen, Suit::Hearts),
+        ];
+        
+        let straight_cards = vec![
+            make_card(Rank::Ten, Suit::Hearts),
+            make_card(Rank::Nine, Suit::Diamonds),
+            make_card(Rank::Eight, Suit::Clubs),
+            make_card(Rank::Seven, Suit::Spades),
+            make_card(Rank::Six, Suit::Hearts),
+            make_card(Rank::Two, Suit::Clubs),
+            make_card(Rank::Ace, Suit::Diamonds),
+        ];
+        
+        let flush_hand = evaluate_hand(flush_cards);
+        let straight_hand = evaluate_hand(straight_cards);
+        
+        assert!(flush_hand > straight_hand);
+    }
+}
