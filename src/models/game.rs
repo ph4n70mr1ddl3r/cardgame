@@ -139,11 +139,10 @@ impl GameState {
         self.players.len() == 2 && self.stage == GameStage::WaitingForPlayers
     }
 
-    pub fn active_players(&self) -> Vec<&PlayerGameState> {
+    pub fn active_players(&self) -> impl Iterator<Item = &PlayerGameState> {
         self.players
             .iter()
             .filter(|p| !p.is_folded && !p.is_disconnected)
-            .collect()
     }
 
     pub fn next_dealer(&mut self) -> Result<()> {

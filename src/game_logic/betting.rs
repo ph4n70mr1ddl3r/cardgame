@@ -200,16 +200,16 @@ impl BettingRules {
 
     /// Check if the betting round is complete
     pub fn is_round_complete(game: &GameState) -> bool {
-        let active_players: Vec<&PlayerGameState> =
-            game.players.iter().filter(|p| !p.is_folded).collect();
+        let active_player_count = game.players.iter().filter(|p| !p.is_folded).count();
 
-        if active_players.len() == 1 {
+        if active_player_count == 1 {
             return true; // One player folded, round over
         }
 
         // Check if all active players have matched the current bet or are all-in
-        active_players
+        game.players
             .iter()
+            .filter(|p| !p.is_folded)
             .all(|p| p.is_all_in || p.bet_this_round == game.current_bet)
     }
 

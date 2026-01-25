@@ -49,10 +49,12 @@ pub fn evaluate_hand(mut cards: Vec<Card>) -> Result<EvaluatedHand> {
     // Sort cards by rank (descending)
     cards.sort_by(|a, b| b.rank.cmp(&a.rank));
 
-    // Try all combinations of 5 cards from 7
-    let mut best_hand = evaluate_five_cards(&cards[0..5]);
-
     // Check all 21 combinations of 5 from 7
+    let mut best_hand = EvaluatedHand {
+        hand_rank: HandRank::HighCard,
+        rank_values: vec![],
+        description: String::new(),
+    };
     for indices in combinations_indices(7, 5) {
         let combo: Vec<Card> = indices.iter().map(|&i| cards[i]).collect();
         let eval = evaluate_five_cards(&combo);
