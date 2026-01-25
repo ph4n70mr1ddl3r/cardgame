@@ -12,6 +12,7 @@ pub struct Config {
     pub min_buyin_bb: u32,
     pub max_buyin_bb: u32,
     pub faucet_amount: i64,
+    pub starting_chips: i64,
 }
 
 impl Default for Config {
@@ -27,6 +28,7 @@ impl Default for Config {
             min_buyin_bb: 20,
             max_buyin_bb: 100,
             faucet_amount: 100,
+            starting_chips: 100,
         }
     }
 }
@@ -44,6 +46,7 @@ impl Config {
             min_buyin_bb: Self::get_env_u32("POKER_MIN_BUYIN_BB", 20),
             max_buyin_bb: Self::get_env_u32("POKER_MAX_BUYIN_BB", 100),
             faucet_amount: Self::get_env_i64("POKER_FAUCET_AMOUNT", 100),
+            starting_chips: Self::get_env_i64("POKER_STARTING_CHIPS", 100),
         };
         if let Err(e) = config.validate() {
             eprintln!(
@@ -141,6 +144,12 @@ impl Config {
             return Err(format!(
                 "Invalid POKER_FAUCET_AMOUNT ({}): must be > 0",
                 self.faucet_amount
+            ));
+        }
+        if self.starting_chips <= 0 {
+            return Err(format!(
+                "Invalid POKER_STARTING_CHIPS ({}): must be > 0",
+                self.starting_chips
             ));
         }
         Ok(())

@@ -80,18 +80,34 @@ impl Database {
                 "Username must be between 3 and 20 characters".to_string(),
             ));
         }
+        if !username.chars().all(|c| c.is_alphanumeric() || c == '_') {
+            return Err(crate::error::PokerError::Game(
+                "Username can only contain letters, numbers, and underscores".to_string(),
+            ));
+        }
         if password.len() < 8 || password.len() > 128 {
             return Err(crate::error::PokerError::Game(
                 "Password must be between 8 and 128 characters".to_string(),
             ));
         }
+        let has_upper = password.chars().any(|c| c.is_uppercase());
+        let has_lower = password.chars().any(|c| c.is_lowercase());
+        let has_digit = password.chars().any(|c| c.is_ascii_digit());
+        if !has_upper || !has_lower || !has_digit {
+            return Err(crate::error::PokerError::Game(
+                "Password must contain at least one uppercase letter, one lowercase letter, and one digit".to_string(),
+            ));
+        }
         let password_hash = self.hash_password(password)?;
+        let starting_chips = 100;
 
-        let result = sqlx::query("INSERT INTO players (username, password_hash) VALUES (?, ?)")
-            .bind(username)
-            .bind(&password_hash)
-            .execute(&self.pool)
-            .await?;
+        let result =
+            sqlx::query("INSERT INTO players (username, password_hash, chips) VALUES (?, ?, ?)")
+                .bind(username)
+                .bind(&password_hash)
+                .bind(starting_chips)
+                .execute(&self.pool)
+                .await?;
 
         Ok(result.last_insert_rowid())
     }
@@ -200,7 +216,7 @@ mod tests {
     async fn test_create_and_get_player() {
         let db = setup_test_db().await;
 
-        let player_id = db.create_player("testuser", "password123").await.unwrap();
+        let player_id = db.create_player("testuser", "Password123").await.unwrap();
         assert!(player_id > 0);
 
         let player = db.get_player_by_username("testuser").await.unwrap();
@@ -215,9 +231,9 @@ mod tests {
     async fn test_password_verification() {
         let db = setup_test_db().await;
 
-        db.create_player("user1", "correctpass").await.unwrap();
+        db.create_player("user1", "CorrectPass123").await.unwrap();
 
-        let valid = db.verify_password("user1", "correctpass").await.unwrap();
+        let valid = db.verify_password("user1", "CorrectPass123").await.unwrap();
         assert!(valid.is_some());
 
         let invalid = db.verify_password("user1", "wrongpass").await.unwrap();
@@ -228,7 +244,7 @@ mod tests {
     async fn test_update_player_chips() {
         let db = setup_test_db().await;
 
-        let player_id = db.create_player("user2", "password123").await.unwrap();
+        let player_id = db.create_player("user2", "Password123").await.unwrap();
         db.update_player_chips(player_id, 250).await.unwrap();
 
         let player = db.get_player_by_id(player_id).await.unwrap().unwrap();
@@ -239,7 +255,7 @@ mod tests {
     async fn test_update_player_stats() {
         let db = setup_test_db().await;
 
-        let player_id = db.create_player("user3", "password456").await.unwrap();
+        let player_id = db.create_player("user3", "Password456").await.unwrap();
         db.update_player_stats(player_id, 5, 2).await.unwrap();
 
         let player = db.get_player_by_id(player_id).await.unwrap().unwrap();

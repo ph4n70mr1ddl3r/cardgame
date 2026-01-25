@@ -12,12 +12,12 @@ pub struct Player {
 }
 
 impl Player {
-    pub fn new(id: i64, username: String, password_hash: String) -> Self {
+    pub fn new(id: i64, username: String, password_hash: String, starting_chips: i64) -> Self {
         Self {
             id,
             username,
             password_hash,
-            chips: 100, // Start with 100 play money chips
+            chips: starting_chips,
             hands_played: 0,
             hands_won: 0,
         }
@@ -72,7 +72,7 @@ mod tests {
 
     #[test]
     fn test_player_creation() {
-        let player = Player::new(1, "test_user".to_string(), "hash123".to_string());
+        let player = Player::new(1, "test_user".to_string(), "hash123".to_string(), 100);
         assert_eq!(player.chips, 100);
         assert_eq!(player.hands_played, 0);
         assert_eq!(player.hands_won, 0);
@@ -80,7 +80,7 @@ mod tests {
 
     #[test]
     fn test_top_up() {
-        let mut player = Player::new(1, "test".to_string(), "hash".to_string());
+        let mut player = Player::new(1, "test".to_string(), "hash".to_string(), 100);
         player.chips = 50;
         let threshold = 100;
 
@@ -96,7 +96,7 @@ mod tests {
 
     #[test]
     fn test_chip_operations() {
-        let mut player = Player::new(1, "test".to_string(), "hash".to_string());
+        let mut player = Player::new(1, "test".to_string(), "hash".to_string(), 100);
 
         assert!(player.deduct_chips(50));
         assert_eq!(player.chips, 50);

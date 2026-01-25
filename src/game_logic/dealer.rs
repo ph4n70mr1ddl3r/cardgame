@@ -83,15 +83,19 @@ impl Dealer {
         Ok(())
     }
 
-    pub fn deal_flop(game: &mut GameState) -> Result<()> {
-        game.stage = GameStage::Flop;
+    fn deal_community_cards(
+        game: &mut GameState,
+        stage: GameStage,
+        num_cards: usize,
+    ) -> Result<()> {
+        game.stage = stage;
         game.current_bet = 0;
 
         // Burn one card
         game.deck.deal();
 
-        // Deal 3 community cards
-        for _ in 0..3 {
+        // Deal community cards
+        for _ in 0..num_cards {
             if let Some(card) = game.deck.deal() {
                 game.community_cards.push(card);
             }
@@ -107,48 +111,16 @@ impl Dealer {
         Ok(())
     }
 
+    pub fn deal_flop(game: &mut GameState) -> Result<()> {
+        Self::deal_community_cards(game, GameStage::Flop, 3)
+    }
+
     pub fn deal_turn(game: &mut GameState) -> Result<()> {
-        game.stage = GameStage::Turn;
-        game.current_bet = 0;
-
-        // Burn one card
-        game.deck.deal();
-
-        // Deal 1 community card
-        if let Some(card) = game.deck.deal() {
-            game.community_cards.push(card);
-        }
-
-        // Reset round bets
-        for player in &mut game.players {
-            player.reset_round_bet();
-        }
-
-        game.current_player_index = Some((game.dealer_index + 1) % game.players.len());
-
-        Ok(())
+        Self::deal_community_cards(game, GameStage::Turn, 1)
     }
 
     pub fn deal_river(game: &mut GameState) -> Result<()> {
-        game.stage = GameStage::River;
-        game.current_bet = 0;
-
-        // Burn one card
-        game.deck.deal();
-
-        // Deal 1 community card
-        if let Some(card) = game.deck.deal() {
-            game.community_cards.push(card);
-        }
-
-        // Reset round bets
-        for player in &mut game.players {
-            player.reset_round_bet();
-        }
-
-        game.current_player_index = Some((game.dealer_index + 1) % game.players.len());
-
-        Ok(())
+        Self::deal_community_cards(game, GameStage::River, 1)
     }
 
     pub fn advance_to_showdown(game: &mut GameState) {
