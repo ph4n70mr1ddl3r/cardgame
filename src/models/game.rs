@@ -90,7 +90,7 @@ pub struct GameState {
 }
 
 impl GameState {
-    pub fn new(table_id: i64, small_blind: f64, big_blind: f64) -> Self {
+    pub fn new(table_id: i64, small_blind: i64, big_blind: i64) -> Self {
         Self {
             table_id,
             stage: GameStage::WaitingForPlayers,
@@ -100,15 +100,18 @@ impl GameState {
             current_bet: 0,
             dealer_index: 0,
             current_player_index: None,
-            small_blind: (small_blind * 100.0) as i64, // Convert $0.50 to 50 chips
-            big_blind: (big_blind * 100.0) as i64,     // Convert $1.00 to 100 chips
+            small_blind,
+            big_blind,
             deck: Deck::new(),
             hand_number: 0,
         }
     }
 
     pub fn add_player(&mut self, player_id: i64, username: String, buyin: i64) {
-        let is_dealer = self.players.is_empty(); // First player is dealer
+        if self.players.len() >= 2 {
+            panic!("Cannot add more than 2 players in heads-up poker");
+        }
+        let is_dealer = self.players.is_empty();
         self.players
             .push(PlayerGameState::new(player_id, username, buyin, is_dealer));
     }
@@ -135,7 +138,7 @@ mod tests {
 
     #[test]
     fn test_game_state_creation() {
-        let game = GameState::new(1, 0.5, 1.0);
+        let game = GameState::new(1, 50, 100);
         assert_eq!(game.stage, GameStage::WaitingForPlayers);
         assert_eq!(game.small_blind, 50);
         assert_eq!(game.big_blind, 100);
@@ -144,7 +147,7 @@ mod tests {
 
     #[test]
     fn test_add_players() {
-        let mut game = GameState::new(1, 0.5, 1.0);
+        let mut game = GameState::new(1, 50, 100);
         game.add_player(1, "player1".to_string(), 100);
         game.add_player(2, "player2".to_string(), 100);
 

@@ -4,20 +4,20 @@ use serde::{Deserialize, Serialize};
 pub struct Table {
     pub id: i64,
     pub name: String,
-    pub small_blind: f64,
-    pub big_blind: f64,
+    pub small_blind: i64,
+    pub big_blind: i64,
     pub max_players: i32,
     pub current_players: usize,
 }
 
 impl Table {
-    pub fn new(id: i64, name: String, small_blind: f64, big_blind: f64) -> Self {
+    pub fn new(id: i64, name: String, small_blind: i64, big_blind: i64) -> Self {
         Self {
             id,
             name,
             small_blind,
             big_blind,
-            max_players: 2, // Heads-up only
+            max_players: 2,
             current_players: 0,
         }
     }
@@ -37,7 +37,7 @@ mod tests {
 
     #[test]
     fn test_table_creation() {
-        let table = Table::new(1, "Table 1".to_string(), 0.5, 1.0);
+        let table = Table::new(1, "Table 1".to_string(), 50, 100);
         assert_eq!(table.max_players, 2);
         assert_eq!(table.current_players, 0);
         assert!(table.can_join());
@@ -45,7 +45,7 @@ mod tests {
 
     #[test]
     fn test_table_full() {
-        let mut table = Table::new(1, "Table 1".to_string(), 0.5, 1.0);
+        let mut table = Table::new(1, "Table 1".to_string(), 50, 100);
         table.current_players = 2;
         assert!(table.is_full());
         assert!(!table.can_join());

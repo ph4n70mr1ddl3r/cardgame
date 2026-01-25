@@ -34,17 +34,25 @@ impl Player {
     }
 
     pub fn deduct_chips(&mut self, amount: i64) -> bool {
-        if amount >= 0 && self.chips >= amount {
-            self.chips -= amount;
+        if amount < 0 {
+            return false;
+        }
+        if amount > self.chips {
+            return false;
+        }
+        self.chips -= amount;
+        true
+    }
+
+    pub fn add_chips(&mut self, amount: i64) -> bool {
+        if amount < 0 {
+            return false;
+        }
+        if let Some(new_chips) = self.chips.checked_add(amount) {
+            self.chips = new_chips;
             true
         } else {
             false
-        }
-    }
-
-    pub fn add_chips(&mut self, amount: i64) {
-        if amount >= 0 {
-            self.chips += amount;
         }
     }
 }

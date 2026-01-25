@@ -75,7 +75,7 @@ impl fmt::Display for Card {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Deck {
-    cards: Vec<Card>,
+    pub(crate) cards: Vec<Card>,
 }
 
 impl Deck {
@@ -83,9 +83,19 @@ impl Deck {
         let mut cards = Vec::with_capacity(52);
         for suit in [Suit::Hearts, Suit::Diamonds, Suit::Clubs, Suit::Spades] {
             for rank in [
-                Rank::Two, Rank::Three, Rank::Four, Rank::Five, Rank::Six,
-                Rank::Seven, Rank::Eight, Rank::Nine, Rank::Ten, Rank::Jack,
-                Rank::Queen, Rank::King, Rank::Ace,
+                Rank::Two,
+                Rank::Three,
+                Rank::Four,
+                Rank::Five,
+                Rank::Six,
+                Rank::Seven,
+                Rank::Eight,
+                Rank::Nine,
+                Rank::Ten,
+                Rank::Jack,
+                Rank::Queen,
+                Rank::King,
+                Rank::Ace,
             ] {
                 cards.push(Card::new(suit, rank));
             }
@@ -128,16 +138,16 @@ mod tests {
     fn test_deck_shuffle_and_deal() {
         let mut deck = Deck::new();
         deck.shuffle();
-        
+
         let first_card = deck.deal();
         assert!(first_card.is_some());
         assert_eq!(deck.remaining(), 51);
-        
+
         // Deal all cards
         for _ in 0..51 {
             deck.deal();
         }
-        
+
         assert_eq!(deck.remaining(), 0);
         assert!(deck.deal().is_none());
     }

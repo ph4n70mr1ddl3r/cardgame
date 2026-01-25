@@ -34,18 +34,21 @@ impl Dealer {
     }
 
     fn post_blinds(game: &mut GameState) -> Result<()> {
-        // In heads-up: dealer posts small blind, other player posts big blind
         let sb_player_idx = game.dealer_index;
         let bb_player_idx = (game.dealer_index + 1) % 2;
 
-        // Post small blind
+        if sb_player_idx >= game.players.len() || bb_player_idx >= game.players.len() {
+            return Err(crate::error::PokerError::Game(
+                "Invalid player indices for blinds".to_string(),
+            ));
+        }
+
         let sb_amount = game.small_blind.min(game.players[sb_player_idx].chips);
         game.players[sb_player_idx].chips -= sb_amount;
         game.players[sb_player_idx].bet_this_round = sb_amount;
         game.players[sb_player_idx].total_bet = sb_amount;
         game.pot += sb_amount;
 
-        // Post big blind
         let bb_amount = game.big_blind.min(game.players[bb_player_idx].chips);
         game.players[bb_player_idx].chips -= bb_amount;
         game.players[bb_player_idx].bet_this_round = bb_amount;
@@ -53,7 +56,6 @@ impl Dealer {
         game.pot += bb_amount;
         game.current_bet = bb_amount;
 
-        // Check for all-in scenarios
         if game.players[sb_player_idx].chips == 0 {
             game.players[sb_player_idx].is_all_in = true;
         }
@@ -156,7 +158,7 @@ mod tests {
 
     #[test]
     fn test_start_new_hand() {
-        let mut game = GameState::new(1, 0.5, 1.0);
+        let mut game = GameState::new(1, 50, 100);
         game.add_player(1, "player1".to_string(), 100);
         game.add_player(2, "player2".to_string(), 100);
 
@@ -166,24 +168,23 @@ mod tests {
         assert_eq!(game.hand_number, 1);
         assert_eq!(game.players[0].hole_cards.len(), 2);
         assert_eq!(game.players[1].hole_cards.len(), 2);
-        assert!(game.pot > 0); // Blinds posted
+        assert!(game.pot > 0);
     }
 
     #[test]
     fn test_blinds_posted() {
-        let mut game = GameState::new(1, 0.5, 1.0);
+        let mut game = GameState::new(1, 50, 100);
         game.add_player(1, "player1".to_string(), 10000);
         game.add_player(2, "player2".to_string(), 10000);
 
         Dealer::start_new_hand(&mut game).unwrap();
 
-        // In heads-up: dealer (idx 0) posts SB (50), other (idx 1) posts BB (100)
-        assert_eq!(game.pot, 150); // SB(50) + BB(100)
+        assert_eq!(game.pot, 150);
     }
 
     #[test]
     fn test_deal_flop() {
-        let mut game = GameState::new(1, 0.5, 1.0);
+        let mut game = GameState::new(1, 50, 100);
         game.add_player(1, "player1".to_string(), 100);
         game.add_player(2, "player2".to_string(), 100);
 
@@ -196,7 +197,7 @@ mod tests {
 
     #[test]
     fn test_deal_turn() {
-        let mut game = GameState::new(1, 0.5, 1.0);
+        let mut game = GameState::new(1, 50, 100);
         game.add_player(1, "player1".to_string(), 100);
         game.add_player(2, "player2".to_string(), 100);
 
@@ -210,7 +211,7 @@ mod tests {
 
     #[test]
     fn test_deal_river() {
-        let mut game = GameState::new(1, 0.5, 1.0);
+        let mut game = GameState::new(1, 50, 100);
         game.add_player(1, "player1".to_string(), 100);
         game.add_player(2, "player2".to_string(), 100);
 

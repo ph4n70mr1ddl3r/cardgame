@@ -62,7 +62,9 @@ impl BettingRules {
             ));
         }
 
-        let total_needed = raise_to - player.bet_this_round;
+        let total_needed = raise_to
+            .checked_sub(player.bet_this_round)
+            .ok_or_else(|| PokerError::InvalidAction("Invalid raise calculation".to_string()))?;
 
         if raise_to <= game.current_bet {
             return Err(PokerError::InvalidAction(
@@ -70,11 +72,14 @@ impl BettingRules {
             ));
         }
 
-        // Minimum raise is 2x the big blind or 2x the last raise
         let min_raise = if game.current_bet == game.big_blind {
-            game.current_bet + game.big_blind
+            game.current_bet
+                .checked_add(game.big_blind)
+                .ok_or_else(|| PokerError::Game("Overflow in min raise calculation".to_string()))?
         } else {
-            game.current_bet * 2
+            game.current_bet
+                .checked_mul(2)
+                .ok_or_else(|| PokerError::Game("Overflow in min raise calculation".to_string()))?
         };
 
         if raise_to < min_raise && total_needed < player.chips {
@@ -108,6 +113,10 @@ impl BettingRules {
         player_idx: usize,
         action: PlayerAction,
     ) -> Result<()> {
+        if player_idx >= game.players.len() {
+            return Err(PokerError::Game("Invalid player index".to_string()));
+        }
+
         Self::validate_action(game, player_idx, &action)?;
 
         let player = &mut game.players[player_idx];
@@ -121,10 +130,22 @@ impl BettingRules {
             }
             PlayerAction::Call => {
                 let call_amount = game.current_bet - player.bet_this_round;
-                player.chips -= call_amount;
-                player.bet_this_round += call_amount;
-                player.total_bet += call_amount;
-                game.pot += call_amount;
+                player.chips = player
+                    .chips
+                    .checked_sub(call_amount)
+                    .ok_or_else(|| PokerError::Game("Insufficient chips for call".to_string()))?;
+                player.bet_this_round = player
+                    .bet_this_round
+                    .checked_add(call_amount)
+                    .ok_or_else(|| PokerError::Game("Overflow in bet calculation".to_string()))?;
+                player.total_bet = player
+                    .total_bet
+                    .checked_add(call_amount)
+                    .ok_or_else(|| PokerError::Game("Overflow in total bet".to_string()))?;
+                game.pot = game
+                    .pot
+                    .checked_add(call_amount)
+                    .ok_or_else(|| PokerError::Game("Overflow in pot".to_string()))?;
 
                 if player.chips == 0 {
                     player.is_all_in = true;
@@ -132,10 +153,19 @@ impl BettingRules {
             }
             PlayerAction::Raise(raise_to) => {
                 let amount_to_add = raise_to - player.bet_this_round;
-                player.chips -= amount_to_add;
+                player.chips = player
+                    .chips
+                    .checked_sub(amount_to_add)
+                    .ok_or_else(|| PokerError::Game("Insufficient chips for raise".to_string()))?;
                 player.bet_this_round = raise_to;
-                player.total_bet += amount_to_add;
-                game.pot += amount_to_add;
+                player.total_bet = player
+                    .total_bet
+                    .checked_add(amount_to_add)
+                    .ok_or_else(|| PokerError::Game("Overflow in total bet".to_string()))?;
+                game.pot = game
+                    .pot
+                    .checked_add(amount_to_add)
+                    .ok_or_else(|| PokerError::Game("Overflow in pot".to_string()))?;
                 game.current_bet = raise_to;
 
                 if player.chips == 0 {
@@ -145,12 +175,20 @@ impl BettingRules {
             PlayerAction::AllIn => {
                 let all_in_amount = player.chips;
                 player.chips = 0;
-                player.bet_this_round += all_in_amount;
-                player.total_bet += all_in_amount;
-                game.pot += all_in_amount;
+                player.bet_this_round = player
+                    .bet_this_round
+                    .checked_add(all_in_amount)
+                    .ok_or_else(|| PokerError::Game("Overflow in bet calculation".to_string()))?;
+                player.total_bet = player
+                    .total_bet
+                    .checked_add(all_in_amount)
+                    .ok_or_else(|| PokerError::Game("Overflow in total bet".to_string()))?;
+                game.pot = game
+                    .pot
+                    .checked_add(all_in_amount)
+                    .ok_or_else(|| PokerError::Game("Overflow in pot".to_string()))?;
                 player.is_all_in = true;
 
-                // Update current bet if this all-in is a raise
                 if player.bet_this_round > game.current_bet {
                     game.current_bet = player.bet_this_round;
                 }
@@ -220,29 +258,27 @@ mod tests {
 
     #[test]
     fn test_validate_check() {
-        let mut game = GameState::new(1, 0.5, 1.0);
+        let mut game = GameState::new(1, 50, 100);
         game.add_player(1, "player1".to_string(), 100);
         game.add_player(2, "player2".to_string(), 100);
         Dealer::start_new_hand(&mut game).unwrap();
 
-        // Player facing BB cannot check
         assert!(BettingRules::validate_action(&game, 0, &PlayerAction::Check).is_err());
     }
 
     #[test]
     fn test_validate_call() {
-        let mut game = GameState::new(1, 0.5, 1.0);
+        let mut game = GameState::new(1, 50, 100);
         game.add_player(1, "player1".to_string(), 100);
         game.add_player(2, "player2".to_string(), 100);
         Dealer::start_new_hand(&mut game).unwrap();
 
-        // Small blind can call the BB
         assert!(BettingRules::validate_action(&game, 0, &PlayerAction::Call).is_ok());
     }
 
     #[test]
     fn test_apply_call() {
-        let mut game = GameState::new(1, 0.5, 1.0);
+        let mut game = GameState::new(1, 50, 100);
         game.add_player(1, "player1".to_string(), 100);
         game.add_player(2, "player2".to_string(), 100);
         Dealer::start_new_hand(&mut game).unwrap();
@@ -250,18 +286,16 @@ mod tests {
         let initial_chips = game.players[0].chips;
         BettingRules::apply_action(&mut game, 0, PlayerAction::Call).unwrap();
 
-        // Should have called the difference (BB - SB)
         assert!(game.players[0].chips < initial_chips);
     }
 
     #[test]
     fn test_apply_raise() {
-        let mut game = GameState::new(1, 0.5, 1.0);
+        let mut game = GameState::new(1, 50, 100);
         game.add_player(1, "player1".to_string(), 10000);
         game.add_player(2, "player2".to_string(), 10000);
         Dealer::start_new_hand(&mut game).unwrap();
 
-        // Raise to 200 (min raise rule: BB + BB = 100 + 100)
         BettingRules::apply_action(&mut game, 0, PlayerAction::Raise(200)).unwrap();
 
         assert_eq!(game.current_bet, 200);
@@ -270,7 +304,7 @@ mod tests {
 
     #[test]
     fn test_apply_fold() {
-        let mut game = GameState::new(1, 0.5, 1.0);
+        let mut game = GameState::new(1, 50, 100);
         game.add_player(1, "player1".to_string(), 100);
         game.add_player(2, "player2".to_string(), 100);
         Dealer::start_new_hand(&mut game).unwrap();
@@ -282,7 +316,7 @@ mod tests {
 
     #[test]
     fn test_apply_all_in() {
-        let mut game = GameState::new(1, 0.5, 1.0);
+        let mut game = GameState::new(1, 50, 100);
         game.add_player(1, "player1".to_string(), 5000);
         game.add_player(2, "player2".to_string(), 5000);
         Dealer::start_new_hand(&mut game).unwrap();
@@ -295,7 +329,7 @@ mod tests {
 
     #[test]
     fn test_round_complete_one_fold() {
-        let mut game = GameState::new(1, 0.5, 1.0);
+        let mut game = GameState::new(1, 50, 100);
         game.add_player(1, "player1".to_string(), 100);
         game.add_player(2, "player2".to_string(), 100);
         Dealer::start_new_hand(&mut game).unwrap();
@@ -307,12 +341,11 @@ mod tests {
 
     #[test]
     fn test_round_complete_bets_matched() {
-        let mut game = GameState::new(1, 0.5, 1.0);
+        let mut game = GameState::new(1, 50, 100);
         game.add_player(1, "player1".to_string(), 10000);
         game.add_player(2, "player2".to_string(), 10000);
         Dealer::start_new_hand(&mut game).unwrap();
 
-        // Both players match BB (100)
         game.players[0].bet_this_round = game.big_blind;
         game.players[1].bet_this_round = game.big_blind;
 
@@ -321,14 +354,13 @@ mod tests {
 
     #[test]
     fn test_get_valid_actions() {
-        let mut game = GameState::new(1, 0.5, 1.0);
+        let mut game = GameState::new(1, 50, 100);
         game.add_player(1, "player1".to_string(), 100);
         game.add_player(2, "player2".to_string(), 100);
         Dealer::start_new_hand(&mut game).unwrap();
 
         let actions = BettingRules::get_valid_actions(&game, 0);
 
-        // Facing a bet: should have Fold, Call, Raise, AllIn
         assert!(actions.contains(&PlayerAction::Fold));
         assert!(actions.contains(&PlayerAction::Call));
         assert!(actions.iter().any(|a| matches!(a, PlayerAction::Raise(_))));
