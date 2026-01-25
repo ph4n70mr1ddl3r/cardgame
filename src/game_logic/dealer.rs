@@ -159,8 +159,8 @@ mod tests {
     #[test]
     fn test_start_new_hand() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100);
-        game.add_player(2, "player2".to_string(), 100);
+        game.add_player(1, "player1".to_string(), 100).unwrap();
+        game.add_player(2, "player2".to_string(), 100).unwrap();
 
         Dealer::start_new_hand(&mut game).unwrap();
 
@@ -174,8 +174,8 @@ mod tests {
     #[test]
     fn test_blinds_posted() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 10000);
-        game.add_player(2, "player2".to_string(), 10000);
+        game.add_player(1, "player1".to_string(), 10000).unwrap();
+        game.add_player(2, "player2".to_string(), 10000).unwrap();
 
         Dealer::start_new_hand(&mut game).unwrap();
 
@@ -185,8 +185,8 @@ mod tests {
     #[test]
     fn test_deal_flop() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100);
-        game.add_player(2, "player2".to_string(), 100);
+        game.add_player(1, "player1".to_string(), 100).unwrap();
+        game.add_player(2, "player2".to_string(), 100).unwrap();
 
         Dealer::start_new_hand(&mut game).unwrap();
         Dealer::deal_flop(&mut game).unwrap();
@@ -198,8 +198,8 @@ mod tests {
     #[test]
     fn test_deal_turn() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100);
-        game.add_player(2, "player2".to_string(), 100);
+        game.add_player(1, "player1".to_string(), 100).unwrap();
+        game.add_player(2, "player2".to_string(), 100).unwrap();
 
         Dealer::start_new_hand(&mut game).unwrap();
         Dealer::deal_flop(&mut game).unwrap();
@@ -212,8 +212,8 @@ mod tests {
     #[test]
     fn test_deal_river() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100);
-        game.add_player(2, "player2".to_string(), 100);
+        game.add_player(1, "player1".to_string(), 100).unwrap();
+        game.add_player(2, "player2".to_string(), 100).unwrap();
 
         Dealer::start_new_hand(&mut game).unwrap();
         Dealer::deal_flop(&mut game).unwrap();

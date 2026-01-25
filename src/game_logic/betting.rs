@@ -259,8 +259,8 @@ mod tests {
     #[test]
     fn test_validate_check() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100);
-        game.add_player(2, "player2".to_string(), 100);
+        game.add_player(1, "player1".to_string(), 100).unwrap();
+        game.add_player(2, "player2".to_string(), 100).unwrap();
         Dealer::start_new_hand(&mut game).unwrap();
 
         assert!(BettingRules::validate_action(&game, 0, &PlayerAction::Check).is_err());
@@ -269,8 +269,8 @@ mod tests {
     #[test]
     fn test_validate_call() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100);
-        game.add_player(2, "player2".to_string(), 100);
+        game.add_player(1, "player1".to_string(), 100).unwrap();
+        game.add_player(2, "player2".to_string(), 100).unwrap();
         Dealer::start_new_hand(&mut game).unwrap();
 
         assert!(BettingRules::validate_action(&game, 0, &PlayerAction::Call).is_ok());
@@ -279,8 +279,8 @@ mod tests {
     #[test]
     fn test_apply_call() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100);
-        game.add_player(2, "player2".to_string(), 100);
+        game.add_player(1, "player1".to_string(), 100).unwrap();
+        game.add_player(2, "player2".to_string(), 100).unwrap();
         Dealer::start_new_hand(&mut game).unwrap();
 
         let initial_chips = game.players[0].chips;
@@ -292,8 +292,8 @@ mod tests {
     #[test]
     fn test_apply_raise() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 10000);
-        game.add_player(2, "player2".to_string(), 10000);
+        game.add_player(1, "player1".to_string(), 10000).unwrap();
+        game.add_player(2, "player2".to_string(), 10000).unwrap();
         Dealer::start_new_hand(&mut game).unwrap();
 
         BettingRules::apply_action(&mut game, 0, PlayerAction::Raise(200)).unwrap();
@@ -305,8 +305,8 @@ mod tests {
     #[test]
     fn test_apply_fold() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100);
-        game.add_player(2, "player2".to_string(), 100);
+        game.add_player(1, "player1".to_string(), 100).unwrap();
+        game.add_player(2, "player2".to_string(), 100).unwrap();
         Dealer::start_new_hand(&mut game).unwrap();
 
         BettingRules::apply_action(&mut game, 0, PlayerAction::Fold).unwrap();
@@ -317,8 +317,8 @@ mod tests {
     #[test]
     fn test_apply_all_in() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 5000);
-        game.add_player(2, "player2".to_string(), 5000);
+        game.add_player(1, "player1".to_string(), 5000).unwrap();
+        game.add_player(2, "player2".to_string(), 5000).unwrap();
         Dealer::start_new_hand(&mut game).unwrap();
 
         BettingRules::apply_action(&mut game, 0, PlayerAction::AllIn).unwrap();
@@ -330,8 +330,8 @@ mod tests {
     #[test]
     fn test_round_complete_one_fold() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100);
-        game.add_player(2, "player2".to_string(), 100);
+        game.add_player(1, "player1".to_string(), 100).unwrap();
+        game.add_player(2, "player2".to_string(), 100).unwrap();
         Dealer::start_new_hand(&mut game).unwrap();
 
         game.players[0].is_folded = true;
@@ -342,8 +342,8 @@ mod tests {
     #[test]
     fn test_round_complete_bets_matched() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 10000);
-        game.add_player(2, "player2".to_string(), 10000);
+        game.add_player(1, "player1".to_string(), 10000).unwrap();
+        game.add_player(2, "player2".to_string(), 10000).unwrap();
         Dealer::start_new_hand(&mut game).unwrap();
 
         game.players[0].bet_this_round = game.big_blind;
@@ -355,8 +355,8 @@ mod tests {
     #[test]
     fn test_get_valid_actions() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100);
-        game.add_player(2, "player2".to_string(), 100);
+        game.add_player(1, "player1".to_string(), 100).unwrap();
+        game.add_player(2, "player2".to_string(), 100).unwrap();
         Dealer::start_new_hand(&mut game).unwrap();
 
         let actions = BettingRules::get_valid_actions(&game, 0);

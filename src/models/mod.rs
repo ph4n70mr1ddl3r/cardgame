@@ -1,11 +1,11 @@
 pub mod card;
-pub mod player;
 pub mod game;
-pub mod table;
 pub mod messages;
+pub mod player;
+pub mod table;
 
 pub use card::{Card, Deck, Rank, Suit};
-pub use player::{Player, PlayerSession};
-pub use game::{GameState, GameStage, PlayerAction, PlayerGameState};
-pub use table::Table;
+pub use game::{GameStage, GameState, PlayerAction, PlayerGameState};
 pub use messages::{ClientMessage, ServerMessage};
+pub use player::{Player, PlayerSession};
+pub use table::Table;

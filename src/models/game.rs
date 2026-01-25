@@ -1,4 +1,5 @@
 use super::card::{Card, Deck};
+use crate::error::Result;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -107,13 +108,16 @@ impl GameState {
         }
     }
 
-    pub fn add_player(&mut self, player_id: i64, username: String, buyin: i64) {
+    pub fn add_player(&mut self, player_id: i64, username: String, buyin: i64) -> Result<()> {
         if self.players.len() >= 2 {
-            panic!("Cannot add more than 2 players in heads-up poker");
+            return Err(crate::error::PokerError::Game(
+                "Cannot add more than 2 players in heads-up poker".to_string(),
+            ));
         }
         let is_dealer = self.players.is_empty();
         self.players
             .push(PlayerGameState::new(player_id, username, buyin, is_dealer));
+        Ok(())
     }
 
     pub fn is_ready_to_start(&self) -> bool {
@@ -148,8 +152,8 @@ mod tests {
     #[test]
     fn test_add_players() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100);
-        game.add_player(2, "player2".to_string(), 100);
+        game.add_player(1, "player1".to_string(), 100).unwrap();
+        game.add_player(2, "player2".to_string(), 100).unwrap();
 
         assert_eq!(game.players.len(), 2);
         assert!(game.is_ready_to_start());

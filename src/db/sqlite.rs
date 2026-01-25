@@ -45,8 +45,8 @@ impl Database {
             CREATE TABLE IF NOT EXISTS tables (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
-                small_blind REAL NOT NULL,
-                big_blind REAL NOT NULL,
+                small_blind INTEGER NOT NULL,
+                big_blind INTEGER NOT NULL,
                 max_players INTEGER DEFAULT 2,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
@@ -77,13 +77,11 @@ impl Database {
     pub async fn create_player(&self, username: &str, password: &str) -> Result<i64> {
         let password_hash = self.hash_password(password)?;
 
-        let result = sqlx::query(
-            "INSERT INTO players (username, password_hash) VALUES (?, ?)"
-        )
-        .bind(username)
-        .bind(&password_hash)
-        .execute(&self.pool)
-        .await?;
+        let result = sqlx::query("INSERT INTO players (username, password_hash) VALUES (?, ?)")
+            .bind(username)
+            .bind(&password_hash)
+            .execute(&self.pool)
+            .await?;
 
         Ok(result.last_insert_rowid())
     }
@@ -133,7 +131,12 @@ impl Database {
         Ok(())
     }
 
-    pub async fn update_player_stats(&self, player_id: i64, hands_played_delta: i64, hands_won_delta: i64) -> Result<()> {
+    pub async fn update_player_stats(
+        &self,
+        player_id: i64,
+        hands_played_delta: i64,
+        hands_won_delta: i64,
+    ) -> Result<()> {
         sqlx::query(
             "UPDATE players SET hands_played = hands_played + ?, hands_won = hands_won + ? WHERE id = ?"
         )
@@ -149,8 +152,11 @@ impl Database {
         if let Some(player) = self.get_player_by_username(username).await? {
             let parsed_hash = PasswordHash::new(&player.password_hash)
                 .map_err(|e| crate::error::PokerError::Auth(format!("Invalid hash: {}", e)))?;
-            
-            if Argon2::default().verify_password(password.as_bytes(), &parsed_hash).is_ok() {
+
+            if Argon2::default()
+                .verify_password(password.as_bytes(), &parsed_hash)
+                .is_ok()
+            {
                 return Ok(Some(player));
             }
         }
@@ -182,13 +188,13 @@ mod tests {
     #[tokio::test]
     async fn test_create_and_get_player() {
         let db = setup_test_db().await;
-        
+
         let player_id = db.create_player("testuser", "password123").await.unwrap();
         assert!(player_id > 0);
-        
+
         let player = db.get_player_by_username("testuser").await.unwrap();
         assert!(player.is_some());
-        
+
         let player = player.unwrap();
         assert_eq!(player.username, "testuser");
         assert_eq!(player.chips, 100);
@@ -197,12 +203,12 @@ mod tests {
     #[tokio::test]
     async fn test_password_verification() {
         let db = setup_test_db().await;
-        
+
         db.create_player("user1", "correctpass").await.unwrap();
-        
+
         let valid = db.verify_password("user1", "correctpass").await.unwrap();
         assert!(valid.is_some());
-        
+
         let invalid = db.verify_password("user1", "wrongpass").await.unwrap();
         assert!(invalid.is_none());
     }
@@ -210,10 +216,10 @@ mod tests {
     #[tokio::test]
     async fn test_update_player_chips() {
         let db = setup_test_db().await;
-        
+
         let player_id = db.create_player("user2", "pass").await.unwrap();
         db.update_player_chips(player_id, 250).await.unwrap();
-        
+
         let player = db.get_player_by_id(player_id).await.unwrap().unwrap();
         assert_eq!(player.chips, 250);
     }
@@ -221,10 +227,10 @@ mod tests {
     #[tokio::test]
     async fn test_update_player_stats() {
         let db = setup_test_db().await;
-        
+
         let player_id = db.create_player("user3", "pass").await.unwrap();
         db.update_player_stats(player_id, 5, 2).await.unwrap();
-        
+
         let player = db.get_player_by_id(player_id).await.unwrap().unwrap();
         assert_eq!(player.hands_played, 5);
         assert_eq!(player.hands_won, 2);

@@ -1,3 +1,4 @@
+use crate::error::{PokerError, Result};
 use crate::models::card::{Card, Rank};
 use std::collections::HashMap;
 
@@ -37,12 +38,13 @@ impl Ord for EvaluatedHand {
     }
 }
 
-pub fn evaluate_hand(mut cards: Vec<Card>) -> EvaluatedHand {
-    assert_eq!(
-        cards.len(),
-        7,
-        "Must have exactly 7 cards (2 hole + 5 community)"
-    );
+pub fn evaluate_hand(mut cards: Vec<Card>) -> Result<EvaluatedHand> {
+    if cards.len() != 7 {
+        return Err(PokerError::Game(format!(
+            "Must have exactly 7 cards (2 hole + 5 community), got {}",
+            cards.len()
+        )));
+    }
 
     // Sort cards by rank (descending)
     cards.sort_by(|a, b| b.rank.cmp(&a.rank));
@@ -58,7 +60,7 @@ pub fn evaluate_hand(mut cards: Vec<Card>) -> EvaluatedHand {
         }
     }
 
-    best_hand
+    Ok(best_hand)
 }
 
 fn evaluate_five_cards(cards: &[Card]) -> EvaluatedHand {
@@ -281,7 +283,7 @@ mod tests {
             make_card(Rank::Three, Suit::Clubs),
         ];
 
-        let eval = evaluate_hand(cards);
+        let eval = evaluate_hand(cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::RoyalFlush);
     }
 
@@ -297,7 +299,7 @@ mod tests {
             make_card(Rank::Three, Suit::Clubs),
         ];
 
-        let eval = evaluate_hand(cards);
+        let eval = evaluate_hand(cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::StraightFlush);
     }
 
@@ -313,7 +315,7 @@ mod tests {
             make_card(Rank::Three, Suit::Clubs),
         ];
 
-        let eval = evaluate_hand(cards);
+        let eval = evaluate_hand(cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::FourOfAKind);
     }
 
@@ -329,7 +331,7 @@ mod tests {
             make_card(Rank::Three, Suit::Clubs),
         ];
 
-        let eval = evaluate_hand(cards);
+        let eval = evaluate_hand(cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::FullHouse);
     }
 
@@ -345,7 +347,7 @@ mod tests {
             make_card(Rank::Queen, Suit::Hearts),
         ];
 
-        let eval = evaluate_hand(cards);
+        let eval = evaluate_hand(cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::Flush);
     }
 
@@ -361,7 +363,7 @@ mod tests {
             make_card(Rank::Ace, Suit::Diamonds),
         ];
 
-        let eval = evaluate_hand(cards);
+        let eval = evaluate_hand(cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::Straight);
     }
 
@@ -378,7 +380,7 @@ mod tests {
             make_card(Rank::Queen, Suit::Diamonds),
         ];
 
-        let eval = evaluate_hand(cards);
+        let eval = evaluate_hand(cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::Straight);
     }
 
@@ -394,7 +396,7 @@ mod tests {
             make_card(Rank::Three, Suit::Diamonds),
         ];
 
-        let eval = evaluate_hand(cards);
+        let eval = evaluate_hand(cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::ThreeOfAKind);
     }
 
@@ -410,7 +412,7 @@ mod tests {
             make_card(Rank::Three, Suit::Diamonds),
         ];
 
-        let eval = evaluate_hand(cards);
+        let eval = evaluate_hand(cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::TwoPair);
     }
 
@@ -426,7 +428,7 @@ mod tests {
             make_card(Rank::Three, Suit::Diamonds),
         ];
 
-        let eval = evaluate_hand(cards);
+        let eval = evaluate_hand(cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::Pair);
     }
 
@@ -442,7 +444,7 @@ mod tests {
             make_card(Rank::Three, Suit::Diamonds),
         ];
 
-        let eval = evaluate_hand(cards);
+        let eval = evaluate_hand(cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::HighCard);
     }
 
@@ -468,8 +470,8 @@ mod tests {
             make_card(Rank::Ace, Suit::Diamonds),
         ];
 
-        let flush_hand = evaluate_hand(flush_cards);
-        let straight_hand = evaluate_hand(straight_cards);
+        let flush_hand = evaluate_hand(flush_cards).unwrap();
+        let straight_hand = evaluate_hand(straight_cards).unwrap();
 
         assert!(flush_hand > straight_hand);
     }

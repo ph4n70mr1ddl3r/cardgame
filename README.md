@@ -145,8 +145,8 @@ CREATE TABLE players (
 CREATE TABLE tables (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    small_blind REAL NOT NULL,
-    big_blind REAL NOT NULL,
+    small_blind INTEGER NOT NULL,
+    big_blind INTEGER NOT NULL,
     max_players INTEGER DEFAULT 2,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
