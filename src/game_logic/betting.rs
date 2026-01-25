@@ -56,9 +56,9 @@ impl BettingRules {
     }
 
     fn validate_raise(game: &GameState, player: &PlayerGameState, raise_to: i64) -> Result<()> {
-        if raise_to < 0 {
+        if raise_to <= 0 {
             return Err(PokerError::InvalidAction(
-                "Raise amount cannot be negative".to_string(),
+                "Raise amount must be positive".to_string(),
             ));
         }
 

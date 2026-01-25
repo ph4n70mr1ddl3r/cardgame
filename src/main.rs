@@ -1,4 +1,4 @@
-use poker_server::error::Result;
+use poker_server::error::{PokerError, Result};
 use poker_server::{db::Database, Config};
 
 #[tokio::main]
@@ -6,6 +6,9 @@ async fn main() -> Result<()> {
     println!("🃏 Poker Server Starting...");
 
     let config = Config::default();
+    config
+        .validate()
+        .map_err(|e| PokerError::Game(format!("Config validation failed: {}", e)))?;
     println!(
         "📡 Server will run on {}:{}",
         config.server_host, config.server_port

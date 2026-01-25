@@ -57,7 +57,7 @@ pub enum ServerMessage {
         cards: Vec<Card>,
     },
     ActionRequired {
-        valid_actions: Vec<String>,
+        valid_actions: Vec<PlayerAction>,
         min_raise: Option<i64>,
         max_raise: Option<i64>,
     },

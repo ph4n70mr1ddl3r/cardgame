@@ -53,7 +53,8 @@ pub fn evaluate_hand(mut cards: Vec<Card>) -> Result<EvaluatedHand> {
     let mut best_hand = evaluate_five_cards(&cards[0..5]);
 
     // Check all 21 combinations of 5 from 7
-    for combo in combinations(&cards, 5) {
+    for indices in combinations_indices(7, 5) {
+        let combo: Vec<Card> = indices.iter().map(|&i| cards[i]).collect();
         let eval = evaluate_five_cards(&combo);
         if eval > best_hand {
             best_hand = eval;
@@ -213,33 +214,32 @@ fn check_straight(cards: &[Card]) -> bool {
     false
 }
 
-fn combinations(items: &[Card], k: usize) -> Vec<Vec<Card>> {
-    let n = items.len();
+fn combinations_indices(n: usize, k: usize) -> Vec<Vec<usize>> {
     if k > n {
         return vec![];
     }
 
     let mut result = Vec::new();
     let mut combo = Vec::new();
-    combine_helper(items, k, 0, &mut combo, &mut result);
+    combine_indices_helper(n, k, 0, &mut combo, &mut result);
     result
 }
 
-fn combine_helper(
-    items: &[Card],
+fn combine_indices_helper(
+    n: usize,
     k: usize,
     start: usize,
-    combo: &mut Vec<Card>,
-    result: &mut Vec<Vec<Card>>,
+    combo: &mut Vec<usize>,
+    result: &mut Vec<Vec<usize>>,
 ) {
     if combo.len() == k {
         result.push(combo.clone());
         return;
     }
 
-    for i in start..items.len() {
-        combo.push(items[i]);
-        combine_helper(items, k, i + 1, combo, result);
+    for i in start..n {
+        combo.push(i);
+        combine_indices_helper(n, k, i + 1, combo, result);
         combo.pop();
     }
 }

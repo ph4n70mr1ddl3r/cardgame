@@ -44,38 +44,29 @@ impl Dealer {
         let sb_player_idx = game.dealer_index;
         let bb_player_idx = (game.dealer_index + 1) % game.players.len();
 
-        let sb_amount = game.small_blind.min(game.players[sb_player_idx].chips);
-        game.players[sb_player_idx].chips = game.players[sb_player_idx]
+        Self::post_blind(game, sb_player_idx, game.small_blind)?;
+        Self::post_blind(game, bb_player_idx, game.big_blind)?;
+        game.current_bet = game.big_blind;
+
+        Ok(())
+    }
+
+    fn post_blind(game: &mut GameState, player_idx: usize, blind_amount: i64) -> Result<()> {
+        let actual_amount = blind_amount.min(game.players[player_idx].chips);
+        game.players[player_idx].chips = game.players[player_idx]
             .chips
-            .checked_sub(sb_amount)
+            .checked_sub(actual_amount)
             .ok_or_else(|| {
-                crate::error::PokerError::Game("Chip underflow posting small blind".to_string())
+                crate::error::PokerError::Game("Chip underflow posting blind".to_string())
             })?;
-        game.players[sb_player_idx].bet_this_round = sb_amount;
-        game.players[sb_player_idx].total_bet = sb_amount;
-        game.pot = game.pot.checked_add(sb_amount).ok_or_else(|| {
-            crate::error::PokerError::Game("Pot overflow posting small blind".to_string())
+        game.players[player_idx].bet_this_round = actual_amount;
+        game.players[player_idx].total_bet = actual_amount;
+        game.pot = game.pot.checked_add(actual_amount).ok_or_else(|| {
+            crate::error::PokerError::Game("Pot overflow posting blind".to_string())
         })?;
 
-        let bb_amount = game.big_blind.min(game.players[bb_player_idx].chips);
-        game.players[bb_player_idx].chips = game.players[bb_player_idx]
-            .chips
-            .checked_sub(bb_amount)
-            .ok_or_else(|| {
-                crate::error::PokerError::Game("Chip underflow posting big blind".to_string())
-            })?;
-        game.players[bb_player_idx].bet_this_round = bb_amount;
-        game.players[bb_player_idx].total_bet = bb_amount;
-        game.pot = game.pot.checked_add(bb_amount).ok_or_else(|| {
-            crate::error::PokerError::Game("Pot overflow posting big blind".to_string())
-        })?;
-        game.current_bet = bb_amount;
-
-        if game.players[sb_player_idx].chips == 0 {
-            game.players[sb_player_idx].is_all_in = true;
-        }
-        if game.players[bb_player_idx].chips == 0 {
-            game.players[bb_player_idx].is_all_in = true;
+        if game.players[player_idx].chips == 0 {
+            game.players[player_idx].is_all_in = true;
         }
 
         Ok(())
