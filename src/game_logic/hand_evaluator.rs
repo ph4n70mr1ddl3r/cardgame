@@ -90,14 +90,14 @@ fn evaluate_five_cards(cards: &[Card]) -> EvaluatedHand {
     if is_straight && is_flush && cards[0].rank == Rank::Ace && cards[4].rank == Rank::Ten {
         return EvaluatedHand {
             hand_rank: HandRank::RoyalFlush,
-            rank_values: vec![Rank::Ace.value()],
+            rank_values: vec![Rank::Ace as u8],
             description: "Royal Flush".to_string(),
         };
     }
 
     // Straight Flush
     if is_straight && is_flush {
-        let high_card = cards[0].rank.value();
+        let high_card = cards[0].rank as u8;
         return EvaluatedHand {
             hand_rank: HandRank::StraightFlush,
             rank_values: vec![high_card],
@@ -109,7 +109,7 @@ fn evaluate_five_cards(cards: &[Card]) -> EvaluatedHand {
     if counts[0].0 == 4 {
         return EvaluatedHand {
             hand_rank: HandRank::FourOfAKind,
-            rank_values: vec![counts[0].1.value(), counts[1].1.value()],
+            rank_values: vec![counts[0].1 as u8, counts[1].1 as u8],
             description: format!("Four {}s", rank_name(counts[0].1)),
         };
     }
@@ -118,7 +118,7 @@ fn evaluate_five_cards(cards: &[Card]) -> EvaluatedHand {
     if counts[0].0 == 3 && counts[1].0 == 2 {
         return EvaluatedHand {
             hand_rank: HandRank::FullHouse,
-            rank_values: vec![counts[0].1.value(), counts[1].1.value()],
+            rank_values: vec![counts[0].1 as u8, counts[1].1 as u8],
             description: format!(
                 "{}s full of {}s",
                 rank_name(counts[0].1),
@@ -129,7 +129,7 @@ fn evaluate_five_cards(cards: &[Card]) -> EvaluatedHand {
 
     // Flush
     if is_flush {
-        let rank_values: Vec<u8> = cards.iter().map(|c| c.rank.value()).collect();
+        let rank_values: Vec<u8> = cards.iter().map(|c| c.rank as u8).collect();
         return EvaluatedHand {
             hand_rank: HandRank::Flush,
             rank_values,
@@ -139,7 +139,7 @@ fn evaluate_five_cards(cards: &[Card]) -> EvaluatedHand {
 
     // Straight
     if is_straight {
-        let high_card = cards[0].rank.value();
+        let high_card = cards[0].rank as u8;
         return EvaluatedHand {
             hand_rank: HandRank::Straight,
             rank_values: vec![high_card],
@@ -151,11 +151,7 @@ fn evaluate_five_cards(cards: &[Card]) -> EvaluatedHand {
     if counts[0].0 == 3 {
         return EvaluatedHand {
             hand_rank: HandRank::ThreeOfAKind,
-            rank_values: vec![
-                counts[0].1.value(),
-                counts[1].1.value(),
-                counts[2].1.value(),
-            ],
+            rank_values: vec![counts[0].1 as u8, counts[1].1 as u8, counts[2].1 as u8],
             description: format!("Three {}s", rank_name(counts[0].1)),
         };
     }
@@ -164,11 +160,7 @@ fn evaluate_five_cards(cards: &[Card]) -> EvaluatedHand {
     if counts[0].0 == 2 && counts[1].0 == 2 {
         return EvaluatedHand {
             hand_rank: HandRank::TwoPair,
-            rank_values: vec![
-                counts[0].1.value(),
-                counts[1].1.value(),
-                counts[2].1.value(),
-            ],
+            rank_values: vec![counts[0].1 as u8, counts[1].1 as u8, counts[2].1 as u8],
             description: format!(
                 "Two Pair, {}s and {}s",
                 rank_name(counts[0].1),
@@ -182,17 +174,17 @@ fn evaluate_five_cards(cards: &[Card]) -> EvaluatedHand {
         return EvaluatedHand {
             hand_rank: HandRank::Pair,
             rank_values: vec![
-                counts[0].1.value(),
-                counts[1].1.value(),
-                counts[2].1.value(),
-                counts[3].1.value(),
+                counts[0].1 as u8,
+                counts[1].1 as u8,
+                counts[2].1 as u8,
+                counts[3].1 as u8,
             ],
             description: format!("Pair of {}s", rank_name(counts[0].1)),
         };
     }
 
     // High Card
-    let rank_values: Vec<u8> = cards.iter().map(|c| c.rank.value()).collect();
+    let rank_values: Vec<u8> = cards.iter().map(|c| c.rank as u8).collect();
     EvaluatedHand {
         hand_rank: HandRank::HighCard,
         rank_values,
@@ -201,7 +193,7 @@ fn evaluate_five_cards(cards: &[Card]) -> EvaluatedHand {
 }
 
 fn check_straight(cards: &[Card]) -> bool {
-    let values: Vec<u8> = cards.iter().map(|c| c.rank.value()).collect();
+    let values: Vec<u8> = cards.iter().map(|c| c.rank as u8).collect();
 
     // Check regular straight
     if values.windows(2).all(|w| w[0] == w[1] + 1) {

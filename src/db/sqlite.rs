@@ -164,8 +164,9 @@ impl Database {
             None => return Ok(None),
         };
 
-        let parsed_hash = PasswordHash::new(&player.password_hash)
-            .map_err(|e| crate::error::PokerError::Auth(format!("Invalid password hash format: {}", e)))?;
+        let parsed_hash = PasswordHash::new(&player.password_hash).map_err(|e| {
+            crate::error::PokerError::Auth(format!("Invalid password hash format: {}", e))
+        })?;
 
         Ok(Argon2::default()
             .verify_password(password.as_bytes(), &parsed_hash)

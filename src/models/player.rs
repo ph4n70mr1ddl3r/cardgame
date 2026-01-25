@@ -40,13 +40,8 @@ impl Player {
         if amount > self.chips {
             return false;
         }
-        match self.chips.checked_sub(amount) {
-            Some(new_chips) => {
-                self.chips = new_chips;
-                true
-            }
-            None => false,
-        }
+        self.chips -= amount;
+        true
     }
 
     pub fn add_chips(&mut self, amount: i64) -> bool {

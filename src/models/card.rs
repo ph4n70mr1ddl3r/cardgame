@@ -28,12 +28,6 @@ pub enum Rank {
     Ace = 14,
 }
 
-impl Rank {
-    pub fn value(&self) -> u8 {
-        *self as u8
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Card {
     pub suit: Suit,
