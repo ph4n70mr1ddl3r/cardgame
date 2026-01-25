@@ -23,12 +23,12 @@ impl Player {
         }
     }
 
-    pub fn can_top_up(&self) -> bool {
-        self.chips < 100
+    pub fn can_top_up(&self, threshold: i64) -> bool {
+        self.chips < threshold
     }
 
-    pub fn top_up(&mut self, faucet_amount: i64) {
-        if self.can_top_up() {
+    pub fn top_up(&mut self, faucet_amount: i64, threshold: i64) {
+        if self.can_top_up(threshold) {
             self.chips = faucet_amount;
         }
     }
@@ -40,8 +40,12 @@ impl Player {
         if amount > self.chips {
             return false;
         }
-        self.chips -= amount;
-        true
+        if let Some(new_chips) = self.chips.checked_sub(amount) {
+            self.chips = new_chips;
+            true
+        } else {
+            false
+        }
     }
 
     pub fn add_chips(&mut self, amount: i64) -> bool {
@@ -81,14 +85,15 @@ mod tests {
     fn test_top_up() {
         let mut player = Player::new(1, "test".to_string(), "hash".to_string());
         player.chips = 50;
+        let threshold = 100;
 
-        assert!(player.can_top_up());
-        player.top_up(100);
+        assert!(player.can_top_up(threshold));
+        player.top_up(100, threshold);
         assert_eq!(player.chips, 100);
 
         // Cannot top up when chips >= 100
-        assert!(!player.can_top_up());
-        player.top_up(100);
+        assert!(!player.can_top_up(threshold));
+        player.top_up(100, threshold);
         assert_eq!(player.chips, 100); // Unchanged
     }
 

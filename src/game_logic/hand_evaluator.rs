@@ -84,7 +84,7 @@ fn evaluate_five_cards(cards: &[Card]) -> EvaluatedHand {
     });
 
     // Royal Flush: A-K-Q-J-10 all same suit
-    if is_straight && is_flush && cards[0].rank == Rank::Ace {
+    if is_straight && is_flush && cards[0].rank == Rank::Ace && cards[4].rank == Rank::Ten {
         return EvaluatedHand {
             hand_rank: HandRank::RoyalFlush,
             rank_values: vec![Rank::Ace.value()],

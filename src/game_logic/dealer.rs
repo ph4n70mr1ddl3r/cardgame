@@ -14,6 +14,7 @@ impl Dealer {
         game.pot = 0;
         game.current_bet = 0;
         game.stage = GameStage::PreFlop;
+        game.side_pots.clear();
 
         // Reset player states for new hand
         for (i, player) in game.players.iter_mut().enumerate() {
@@ -28,32 +29,46 @@ impl Dealer {
         Self::deal_hole_cards(game)?;
 
         // Set current player (small blind acts first preflop in heads-up)
-        game.current_player_index = Some((game.dealer_index + 1) % 2);
+        game.current_player_index = Some((game.dealer_index + 1) % game.players.len());
 
         Ok(())
     }
 
     fn post_blinds(game: &mut GameState) -> Result<()> {
-        let sb_player_idx = game.dealer_index;
-        let bb_player_idx = (game.dealer_index + 1) % 2;
-
-        if sb_player_idx >= game.players.len() || bb_player_idx >= game.players.len() {
+        if game.players.len() < 2 {
             return Err(crate::error::PokerError::Game(
-                "Invalid player indices for blinds".to_string(),
+                "Need at least 2 players to post blinds".to_string(),
             ));
         }
 
+        let sb_player_idx = game.dealer_index;
+        let bb_player_idx = (game.dealer_index + 1) % game.players.len();
+
         let sb_amount = game.small_blind.min(game.players[sb_player_idx].chips);
-        game.players[sb_player_idx].chips -= sb_amount;
+        game.players[sb_player_idx].chips = game.players[sb_player_idx]
+            .chips
+            .checked_sub(sb_amount)
+            .ok_or_else(|| {
+                crate::error::PokerError::Game("Chip underflow posting small blind".to_string())
+            })?;
         game.players[sb_player_idx].bet_this_round = sb_amount;
         game.players[sb_player_idx].total_bet = sb_amount;
-        game.pot += sb_amount;
+        game.pot = game.pot.checked_add(sb_amount).ok_or_else(|| {
+            crate::error::PokerError::Game("Pot overflow posting small blind".to_string())
+        })?;
 
         let bb_amount = game.big_blind.min(game.players[bb_player_idx].chips);
-        game.players[bb_player_idx].chips -= bb_amount;
+        game.players[bb_player_idx].chips = game.players[bb_player_idx]
+            .chips
+            .checked_sub(bb_amount)
+            .ok_or_else(|| {
+                crate::error::PokerError::Game("Chip underflow posting big blind".to_string())
+            })?;
         game.players[bb_player_idx].bet_this_round = bb_amount;
         game.players[bb_player_idx].total_bet = bb_amount;
-        game.pot += bb_amount;
+        game.pot = game.pot.checked_add(bb_amount).ok_or_else(|| {
+            crate::error::PokerError::Game("Pot overflow posting big blind".to_string())
+        })?;
         game.current_bet = bb_amount;
 
         if game.players[sb_player_idx].chips == 0 {
@@ -96,8 +111,7 @@ impl Dealer {
             player.reset_round_bet();
         }
 
-        // Big blind acts first post-flop (non-dealer)
-        game.current_player_index = Some((game.dealer_index + 1) % 2);
+        game.current_player_index = Some((game.dealer_index + 1) % game.players.len());
 
         Ok(())
     }
@@ -119,7 +133,7 @@ impl Dealer {
             player.reset_round_bet();
         }
 
-        game.current_player_index = Some((game.dealer_index + 1) % 2);
+        game.current_player_index = Some((game.dealer_index + 1) % game.players.len());
 
         Ok(())
     }
@@ -141,7 +155,7 @@ impl Dealer {
             player.reset_round_bet();
         }
 
-        game.current_player_index = Some((game.dealer_index + 1) % 2);
+        game.current_player_index = Some((game.dealer_index + 1) % game.players.len());
 
         Ok(())
     }

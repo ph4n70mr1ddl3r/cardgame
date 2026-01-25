@@ -25,6 +25,13 @@ pub enum PlayerAction {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidAction {
+    pub action: PlayerAction,
+    pub min_raise: Option<i64>,
+    pub max_raise: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerGameState {
     pub player_id: i64,
     pub username: String,
@@ -88,6 +95,13 @@ pub struct GameState {
     pub big_blind: i64,
     pub deck: Deck,
     pub hand_number: u64,
+    pub side_pots: Vec<SidePot>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SidePot {
+    pub amount: i64,
+    pub eligible_players: Vec<usize>,
 }
 
 impl GameState {
@@ -105,6 +119,7 @@ impl GameState {
             big_blind,
             deck: Deck::new(),
             hand_number: 0,
+            side_pots: Vec::new(),
         }
     }
 
@@ -131,8 +146,14 @@ impl GameState {
             .collect()
     }
 
-    pub fn next_dealer(&mut self) {
+    pub fn next_dealer(&mut self) -> Result<()> {
+        if self.players.is_empty() {
+            return Err(crate::error::PokerError::Game(
+                "Cannot rotate dealer with no players".to_string(),
+            ));
+        }
         self.dealer_index = (self.dealer_index + 1) % self.players.len();
+        Ok(())
     }
 }
 

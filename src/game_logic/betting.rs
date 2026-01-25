@@ -214,7 +214,11 @@ impl BettingRules {
     }
 
     /// Get valid actions for the current player
-    pub fn get_valid_actions(game: &GameState, player_idx: usize) -> Vec<PlayerAction> {
+    pub fn get_valid_actions(
+        game: &GameState,
+        player_idx: usize,
+    ) -> Vec<crate::models::game::ValidAction> {
+        use crate::models::game::{PlayerAction, ValidAction};
         let player = &game.players[player_idx];
         let mut actions = Vec::new();
 
@@ -223,28 +227,53 @@ impl BettingRules {
         }
 
         // Fold is always valid
-        actions.push(PlayerAction::Fold);
+        actions.push(ValidAction {
+            action: PlayerAction::Fold,
+            min_raise: None,
+            max_raise: None,
+        });
 
         // Check if facing a bet
         if player.bet_this_round >= game.current_bet {
             // Can check
-            actions.push(PlayerAction::Check);
+            actions.push(ValidAction {
+                action: PlayerAction::Check,
+                min_raise: None,
+                max_raise: None,
+            });
         } else {
             // Can call
             let call_amount = game.current_bet - player.bet_this_round;
             if call_amount <= player.chips {
-                actions.push(PlayerAction::Call);
+                actions.push(ValidAction {
+                    action: PlayerAction::Call,
+                    min_raise: None,
+                    max_raise: None,
+                });
             }
         }
 
         // Can always raise if have chips
         if player.chips > 0 {
-            actions.push(PlayerAction::Raise(0)); // Placeholder value
+            let min_raise = if game.current_bet == game.big_blind {
+                game.current_bet + game.big_blind
+            } else {
+                game.current_bet * 2
+            };
+            actions.push(ValidAction {
+                action: PlayerAction::Raise(0),
+                min_raise: Some(min_raise),
+                max_raise: Some(player.chips + player.bet_this_round),
+            });
         }
 
         // Can always go all-in if have chips
         if player.chips > 0 {
-            actions.push(PlayerAction::AllIn);
+            actions.push(ValidAction {
+                action: PlayerAction::AllIn,
+                min_raise: None,
+                max_raise: None,
+            });
         }
 
         actions
@@ -361,9 +390,17 @@ mod tests {
 
         let actions = BettingRules::get_valid_actions(&game, 0);
 
-        assert!(actions.contains(&PlayerAction::Fold));
-        assert!(actions.contains(&PlayerAction::Call));
-        assert!(actions.iter().any(|a| matches!(a, PlayerAction::Raise(_))));
-        assert!(actions.contains(&PlayerAction::AllIn));
+        assert!(actions
+            .iter()
+            .any(|a| matches!(a.action, PlayerAction::Fold)));
+        assert!(actions
+            .iter()
+            .any(|a| matches!(a.action, PlayerAction::Call)));
+        assert!(actions
+            .iter()
+            .any(|a| matches!(a.action, PlayerAction::Raise(_))));
+        assert!(actions
+            .iter()
+            .any(|a| matches!(a.action, PlayerAction::AllIn)));
     }
 }

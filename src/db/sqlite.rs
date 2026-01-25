@@ -75,6 +75,16 @@ impl Database {
 
     // Player CRUD Operations
     pub async fn create_player(&self, username: &str, password: &str) -> Result<i64> {
+        if username.len() < 3 || username.len() > 20 {
+            return Err(crate::error::PokerError::Game(
+                "Username must be between 3 and 20 characters".to_string(),
+            ));
+        }
+        if password.len() < 8 || password.len() > 128 {
+            return Err(crate::error::PokerError::Game(
+                "Password must be between 8 and 128 characters".to_string(),
+            ));
+        }
         let password_hash = self.hash_password(password)?;
 
         let result = sqlx::query("INSERT INTO players (username, password_hash) VALUES (?, ?)")
@@ -217,7 +227,7 @@ mod tests {
     async fn test_update_player_chips() {
         let db = setup_test_db().await;
 
-        let player_id = db.create_player("user2", "pass").await.unwrap();
+        let player_id = db.create_player("user2", "password123").await.unwrap();
         db.update_player_chips(player_id, 250).await.unwrap();
 
         let player = db.get_player_by_id(player_id).await.unwrap().unwrap();
@@ -228,7 +238,7 @@ mod tests {
     async fn test_update_player_stats() {
         let db = setup_test_db().await;
 
-        let player_id = db.create_player("user3", "pass").await.unwrap();
+        let player_id = db.create_player("user3", "password456").await.unwrap();
         db.update_player_stats(player_id, 5, 2).await.unwrap();
 
         let player = db.get_player_by_id(player_id).await.unwrap().unwrap();

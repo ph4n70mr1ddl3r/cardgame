@@ -72,4 +72,32 @@ impl Config {
                 .unwrap_or(100),
         }
     }
+
+    pub fn validate(&self) -> Result<(), String> {
+        if self.server_port == 0 {
+            return Err("Server port must be > 0".to_string());
+        }
+        if self.max_tables == 0 {
+            return Err("max_tables must be > 0".to_string());
+        }
+        if self.small_blind <= 0 {
+            return Err("small_blind must be > 0".to_string());
+        }
+        if self.big_blind <= 0 {
+            return Err("big_blind must be > 0".to_string());
+        }
+        if self.big_blind < self.small_blind {
+            return Err("big_blind must be >= small_blind".to_string());
+        }
+        if self.min_buyin_bb == 0 {
+            return Err("min_buyin_bb must be > 0".to_string());
+        }
+        if self.max_buyin_bb < self.min_buyin_bb {
+            return Err("max_buyin_bb must be >= min_buyin_bb".to_string());
+        }
+        if self.faucet_amount <= 0 {
+            return Err("faucet_amount must be > 0".to_string());
+        }
+        Ok(())
+    }
 }
