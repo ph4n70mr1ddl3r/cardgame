@@ -52,7 +52,7 @@ impl PlayerGameState {
             is_all_in: false,
             is_dealer,
             is_small_blind: !is_dealer, // Heads-up: non-dealer is SB
-            is_big_blind: is_dealer,     // Heads-up: dealer is BB
+            is_big_blind: is_dealer,    // Heads-up: dealer is BB
             is_disconnected: false,
         }
     }
@@ -100,8 +100,8 @@ impl GameState {
             current_bet: 0,
             dealer_index: 0,
             current_player_index: None,
-            small_blind: (small_blind * 1.0) as i64, // Convert to integer chips
-            big_blind: (big_blind * 1.0) as i64,
+            small_blind: (small_blind * 100.0) as i64, // Convert $0.50 to 50 chips
+            big_blind: (big_blind * 100.0) as i64,     // Convert $1.00 to 100 chips
             deck: Deck::new(),
             hand_number: 0,
         }
@@ -109,7 +109,8 @@ impl GameState {
 
     pub fn add_player(&mut self, player_id: i64, username: String, buyin: i64) {
         let is_dealer = self.players.is_empty(); // First player is dealer
-        self.players.push(PlayerGameState::new(player_id, username, buyin, is_dealer));
+        self.players
+            .push(PlayerGameState::new(player_id, username, buyin, is_dealer));
     }
 
     pub fn is_ready_to_start(&self) -> bool {
@@ -117,7 +118,8 @@ impl GameState {
     }
 
     pub fn active_players(&self) -> Vec<&PlayerGameState> {
-        self.players.iter()
+        self.players
+            .iter()
             .filter(|p| !p.is_folded && !p.is_disconnected)
             .collect()
     }
@@ -135,8 +137,8 @@ mod tests {
     fn test_game_state_creation() {
         let game = GameState::new(1, 0.5, 1.0);
         assert_eq!(game.stage, GameStage::WaitingForPlayers);
-        assert_eq!(game.small_blind, 0);
-        assert_eq!(game.big_blind, 1);
+        assert_eq!(game.small_blind, 50);
+        assert_eq!(game.big_blind, 100);
         assert_eq!(game.pot, 0);
     }
 
@@ -145,7 +147,7 @@ mod tests {
         let mut game = GameState::new(1, 0.5, 1.0);
         game.add_player(1, "player1".to_string(), 100);
         game.add_player(2, "player2".to_string(), 100);
-        
+
         assert_eq!(game.players.len(), 2);
         assert!(game.is_ready_to_start());
         assert!(game.players[0].is_dealer);
@@ -157,7 +159,7 @@ mod tests {
         let mut player = PlayerGameState::new(1, "test".to_string(), 100, true);
         player.total_bet = 50;
         player.is_folded = true;
-        
+
         player.reset_for_new_hand(false);
         assert_eq!(player.total_bet, 0);
         assert!(!player.is_folded);

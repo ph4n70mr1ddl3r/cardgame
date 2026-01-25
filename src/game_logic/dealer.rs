@@ -1,6 +1,6 @@
-use crate::models::card::{Card, Deck};
-use crate::models::game::{GameState, GameStage, PlayerGameState};
 use crate::error::Result;
+use crate::models::card::Deck;
+use crate::models::game::{GameStage, GameState};
 
 pub struct Dealer;
 
@@ -14,37 +14,37 @@ impl Dealer {
         game.pot = 0;
         game.current_bet = 0;
         game.stage = GameStage::PreFlop;
-        
+
         // Reset player states for new hand
         for (i, player) in game.players.iter_mut().enumerate() {
             let is_dealer = i == game.dealer_index;
             player.reset_for_new_hand(is_dealer);
         }
-        
+
         // Post blinds
         Self::post_blinds(game)?;
-        
+
         // Deal hole cards (2 cards to each player)
         Self::deal_hole_cards(game)?;
-        
+
         // Set current player (small blind acts first preflop in heads-up)
         game.current_player_index = Some((game.dealer_index + 1) % 2);
-        
+
         Ok(())
     }
-    
+
     fn post_blinds(game: &mut GameState) -> Result<()> {
         // In heads-up: dealer posts small blind, other player posts big blind
         let sb_player_idx = game.dealer_index;
         let bb_player_idx = (game.dealer_index + 1) % 2;
-        
+
         // Post small blind
         let sb_amount = game.small_blind.min(game.players[sb_player_idx].chips);
         game.players[sb_player_idx].chips -= sb_amount;
         game.players[sb_player_idx].bet_this_round = sb_amount;
         game.players[sb_player_idx].total_bet = sb_amount;
         game.pot += sb_amount;
-        
+
         // Post big blind
         let bb_amount = game.big_blind.min(game.players[bb_player_idx].chips);
         game.players[bb_player_idx].chips -= bb_amount;
@@ -52,7 +52,7 @@ impl Dealer {
         game.players[bb_player_idx].total_bet = bb_amount;
         game.pot += bb_amount;
         game.current_bet = bb_amount;
-        
+
         // Check for all-in scenarios
         if game.players[sb_player_idx].chips == 0 {
             game.players[sb_player_idx].is_all_in = true;
@@ -60,10 +60,10 @@ impl Dealer {
         if game.players[bb_player_idx].chips == 0 {
             game.players[bb_player_idx].is_all_in = true;
         }
-        
+
         Ok(())
     }
-    
+
     fn deal_hole_cards(game: &mut GameState) -> Result<()> {
         for _ in 0..2 {
             for player in &mut game.players {
@@ -74,76 +74,76 @@ impl Dealer {
         }
         Ok(())
     }
-    
+
     pub fn deal_flop(game: &mut GameState) -> Result<()> {
         game.stage = GameStage::Flop;
         game.current_bet = 0;
-        
+
         // Burn one card
         game.deck.deal();
-        
+
         // Deal 3 community cards
         for _ in 0..3 {
             if let Some(card) = game.deck.deal() {
                 game.community_cards.push(card);
             }
         }
-        
+
         // Reset round bets
         for player in &mut game.players {
             player.reset_round_bet();
         }
-        
+
         // Big blind acts first post-flop (non-dealer)
         game.current_player_index = Some((game.dealer_index + 1) % 2);
-        
+
         Ok(())
     }
-    
+
     pub fn deal_turn(game: &mut GameState) -> Result<()> {
         game.stage = GameStage::Turn;
         game.current_bet = 0;
-        
+
         // Burn one card
         game.deck.deal();
-        
+
         // Deal 1 community card
         if let Some(card) = game.deck.deal() {
             game.community_cards.push(card);
         }
-        
+
         // Reset round bets
         for player in &mut game.players {
             player.reset_round_bet();
         }
-        
+
         game.current_player_index = Some((game.dealer_index + 1) % 2);
-        
+
         Ok(())
     }
-    
+
     pub fn deal_river(game: &mut GameState) -> Result<()> {
         game.stage = GameStage::River;
         game.current_bet = 0;
-        
+
         // Burn one card
         game.deck.deal();
-        
+
         // Deal 1 community card
         if let Some(card) = game.deck.deal() {
             game.community_cards.push(card);
         }
-        
+
         // Reset round bets
         for player in &mut game.players {
             player.reset_round_bet();
         }
-        
+
         game.current_player_index = Some((game.dealer_index + 1) % 2);
-        
+
         Ok(())
     }
-    
+
     pub fn advance_to_showdown(game: &mut GameState) {
         game.stage = GameStage::Showdown;
         game.current_player_index = None;
@@ -159,9 +159,9 @@ mod tests {
         let mut game = GameState::new(1, 0.5, 1.0);
         game.add_player(1, "player1".to_string(), 100);
         game.add_player(2, "player2".to_string(), 100);
-        
+
         Dealer::start_new_hand(&mut game).unwrap();
-        
+
         assert_eq!(game.stage, GameStage::PreFlop);
         assert_eq!(game.hand_number, 1);
         assert_eq!(game.players[0].hole_cards.len(), 2);
@@ -172,14 +172,13 @@ mod tests {
     #[test]
     fn test_blinds_posted() {
         let mut game = GameState::new(1, 0.5, 1.0);
-        game.add_player(1, "player1".to_string(), 100);
-        game.add_player(2, "player2".to_string(), 100);
-        
+        game.add_player(1, "player1".to_string(), 10000);
+        game.add_player(2, "player2".to_string(), 10000);
+
         Dealer::start_new_hand(&mut game).unwrap();
-        
-        // In heads-up: dealer (idx 0) posts SB, other (idx 1) posts BB
-        // But our implementation converts floats to ints, so SB=0, BB=1
-        assert_eq!(game.pot, 1); // SB(0) + BB(1)
+
+        // In heads-up: dealer (idx 0) posts SB (50), other (idx 1) posts BB (100)
+        assert_eq!(game.pot, 150); // SB(50) + BB(100)
     }
 
     #[test]
@@ -187,10 +186,10 @@ mod tests {
         let mut game = GameState::new(1, 0.5, 1.0);
         game.add_player(1, "player1".to_string(), 100);
         game.add_player(2, "player2".to_string(), 100);
-        
+
         Dealer::start_new_hand(&mut game).unwrap();
         Dealer::deal_flop(&mut game).unwrap();
-        
+
         assert_eq!(game.stage, GameStage::Flop);
         assert_eq!(game.community_cards.len(), 3);
     }
@@ -200,11 +199,11 @@ mod tests {
         let mut game = GameState::new(1, 0.5, 1.0);
         game.add_player(1, "player1".to_string(), 100);
         game.add_player(2, "player2".to_string(), 100);
-        
+
         Dealer::start_new_hand(&mut game).unwrap();
         Dealer::deal_flop(&mut game).unwrap();
         Dealer::deal_turn(&mut game).unwrap();
-        
+
         assert_eq!(game.stage, GameStage::Turn);
         assert_eq!(game.community_cards.len(), 4);
     }
@@ -214,12 +213,12 @@ mod tests {
         let mut game = GameState::new(1, 0.5, 1.0);
         game.add_player(1, "player1".to_string(), 100);
         game.add_player(2, "player2".to_string(), 100);
-        
+
         Dealer::start_new_hand(&mut game).unwrap();
         Dealer::deal_flop(&mut game).unwrap();
         Dealer::deal_turn(&mut game).unwrap();
         Dealer::deal_river(&mut game).unwrap();
-        
+
         assert_eq!(game.stage, GameStage::River);
         assert_eq!(game.community_cards.len(), 5);
     }

@@ -34,7 +34,7 @@ impl Player {
     }
 
     pub fn deduct_chips(&mut self, amount: i64) -> bool {
-        if self.chips >= amount {
+        if amount >= 0 && self.chips >= amount {
             self.chips -= amount;
             true
         } else {
@@ -43,7 +43,9 @@ impl Player {
     }
 
     pub fn add_chips(&mut self, amount: i64) {
-        self.chips += amount;
+        if amount >= 0 {
+            self.chips += amount;
+        }
     }
 }
 
@@ -71,11 +73,11 @@ mod tests {
     fn test_top_up() {
         let mut player = Player::new(1, "test".to_string(), "hash".to_string());
         player.chips = 50;
-        
+
         assert!(player.can_top_up());
         player.top_up(100);
         assert_eq!(player.chips, 100);
-        
+
         // Cannot top up when chips >= 100
         assert!(!player.can_top_up());
         player.top_up(100);
@@ -85,13 +87,13 @@ mod tests {
     #[test]
     fn test_chip_operations() {
         let mut player = Player::new(1, "test".to_string(), "hash".to_string());
-        
+
         assert!(player.deduct_chips(50));
         assert_eq!(player.chips, 50);
-        
+
         assert!(!player.deduct_chips(100)); // Insufficient chips
         assert_eq!(player.chips, 50); // Unchanged
-        
+
         player.add_chips(75);
         assert_eq!(player.chips, 125);
     }
