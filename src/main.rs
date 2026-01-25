@@ -15,8 +15,8 @@ async fn main() -> Result<()> {
     );
     println!("💾 Database: {}", config.database_url);
 
-    // Initialize database
-    let db = Database::new(&config.database_url).await?;
+    let db = Database::new(&config.database_url).await
+        .map_err(|e| PokerError::Game(format!("Failed to connect to database: {}", e)))?;
     db.initialize_schema().await?;
     println!("✅ Database initialized");
 

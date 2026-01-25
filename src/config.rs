@@ -33,7 +33,7 @@ impl Default for Config {
 
 impl Config {
     pub fn from_env() -> Self {
-        Self {
+        let config = Self {
             server_host: std::env::var("POKER_SERVER_HOST")
                 .unwrap_or_else(|_| "127.0.0.1".to_string()),
             server_port: std::env::var("POKER_SERVER_PORT")
@@ -70,7 +70,12 @@ impl Config {
                 .ok()
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(100),
+        };
+        if let Err(e) = config.validate() {
+            eprintln!("Config validation error: {}", e);
+            eprintln!("Using default values for invalid configuration");
         }
+        config
     }
 
     pub fn validate(&self) -> Result<(), String> {

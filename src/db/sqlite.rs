@@ -159,18 +159,18 @@ impl Database {
     }
 
     pub async fn verify_password(&self, username: &str, password: &str) -> Result<Option<Player>> {
-        if let Some(player) = self.get_player_by_username(username).await? {
-            let parsed_hash = PasswordHash::new(&player.password_hash)
-                .map_err(|e| crate::error::PokerError::Auth(format!("Invalid hash: {}", e)))?;
+        let player = match self.get_player_by_username(username).await? {
+            Some(p) => p,
+            None => return Ok(None),
+        };
 
-            if Argon2::default()
-                .verify_password(password.as_bytes(), &parsed_hash)
-                .is_ok()
-            {
-                return Ok(Some(player));
-            }
-        }
-        Ok(None)
+        let parsed_hash = PasswordHash::new(&player.password_hash)
+            .map_err(|e| crate::error::PokerError::Auth(format!("Invalid password hash format: {}", e)))?;
+
+        Ok(Argon2::default()
+            .verify_password(password.as_bytes(), &parsed_hash)
+            .is_ok()
+            .then_some(player))
     }
 
     // Helper functions

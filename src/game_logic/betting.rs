@@ -256,14 +256,20 @@ impl BettingRules {
         // Can always raise if have chips
         if player.chips > 0 {
             let min_raise = if game.current_bet == game.big_blind {
-                game.current_bet + game.big_blind
+                game.current_bet
+                    .checked_add(game.big_blind)
+                    .unwrap_or(i64::MAX)
             } else {
-                game.current_bet * 2
+                game.current_bet.checked_mul(2).unwrap_or(i64::MAX)
             };
+            let max_raise = player
+                .chips
+                .checked_add(player.bet_this_round)
+                .unwrap_or(i64::MAX);
             actions.push(ValidAction {
                 action: PlayerAction::Raise(0),
                 min_raise: Some(min_raise),
-                max_raise: Some(player.chips + player.bet_this_round),
+                max_raise: Some(max_raise),
             });
         }
 

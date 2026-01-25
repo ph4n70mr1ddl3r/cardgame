@@ -40,20 +40,26 @@ impl Player {
         if amount > self.chips {
             return false;
         }
-        self.chips.checked_sub(amount).is_some_and(|new_chips| {
-            self.chips = new_chips;
-            true
-        })
+        match self.chips.checked_sub(amount) {
+            Some(new_chips) => {
+                self.chips = new_chips;
+                true
+            }
+            None => false,
+        }
     }
 
     pub fn add_chips(&mut self, amount: i64) -> bool {
         if amount < 0 {
             return false;
         }
-        self.chips.checked_add(amount).is_some_and(|new_chips| {
-            self.chips = new_chips;
-            true
-        })
+        match self.chips.checked_add(amount) {
+            Some(new_chips) => {
+                self.chips = new_chips;
+                true
+            }
+            None => false,
+        }
     }
 }
 
