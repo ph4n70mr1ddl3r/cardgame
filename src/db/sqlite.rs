@@ -79,9 +79,9 @@ impl Database {
 
     // Player CRUD Operations
     pub async fn create_player(&self, username: &str, password: &str) -> Result<i64> {
-        if username.len() < 3 || username.len() > 20 {
+        if username.len() < crate::models::game::MIN_USERNAME_LEN || username.len() > crate::models::game::MAX_USERNAME_LEN {
             return Err(crate::error::PokerError::Game(
-                "Username must be between 3 and 20 characters".to_string(),
+                format!("Username must be between {} and {} characters", crate::models::game::MIN_USERNAME_LEN, crate::models::game::MAX_USERNAME_LEN).to_string(),
             ));
         }
         if !username.chars().all(|c| c.is_alphanumeric() || c == '_') {
@@ -99,9 +99,9 @@ impl Database {
                 "Username must start with a letter".to_string(),
             ));
         }
-        if password.len() < 8 || password.len() > 128 {
+        if password.len() < crate::models::game::MIN_PASSWORD_LEN || password.len() > crate::models::game::MAX_PASSWORD_LEN {
             return Err(crate::error::PokerError::Game(
-                "Password must be between 8 and 128 characters".to_string(),
+                format!("Password must be between {} and {} characters", crate::models::game::MIN_PASSWORD_LEN, crate::models::game::MAX_PASSWORD_LEN).to_string(),
             ));
         }
         let has_upper = password.chars().any(|c| c.is_uppercase());
@@ -161,15 +161,11 @@ impl Database {
         }))
     }
 
-    pub async fn update_player_chips(&self, player_id: i64, new_chips: i64) -> Result<()> {
-        if new_chips < 0 {
-            return Err(crate::error::PokerError::Game(
-                "Chips cannot be negative".to_string(),
-            ));
-        }
-        sqlx::query("UPDATE players SET chips = ? WHERE id = ?")
-            .bind(new_chips)
+    pub async fn update_player_chips(&self, player_id: i64, delta: i64) -> Result<()> {
+        sqlx::query("UPDATE players SET chips = chips + ? WHERE id = ? AND chips + ? >= 0")
+            .bind(delta)
             .bind(player_id)
+            .bind(delta)
             .execute(&self.pool)
             .await?;
         Ok(())
@@ -207,10 +203,15 @@ impl Database {
             crate::error::PokerError::Auth(format!("Invalid password hash format: {}", e))
         })?;
 
-        Ok(Argon2::default()
+        let is_valid = Argon2::default()
             .verify_password(password.as_bytes(), &parsed_hash)
-            .is_ok()
-            .then_some(player))
+            .is_ok();
+
+        if is_valid {
+            Ok(Some(player))
+        } else {
+            Ok(None)
+        }
     }
 
     // Helper functions
@@ -268,7 +269,7 @@ mod tests {
         let db = setup_test_db().await;
 
         let player_id = db.create_player("user2", "Password123").await.unwrap();
-        db.update_player_chips(player_id, 250).await.unwrap();
+        db.update_player_chips(player_id, 150).await.unwrap();
 
         let player = db.get_player_by_id(player_id).await.unwrap().unwrap();
         assert_eq!(player.chips, 250);

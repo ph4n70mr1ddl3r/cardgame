@@ -1,3 +1,4 @@
+use crate::error::{PokerError, Result};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -28,6 +29,27 @@ impl Table {
 
     pub fn can_join(&self) -> bool {
         !self.is_full()
+    }
+
+    pub fn validate_buyin(&self, buyin: i64, min_buyin_bb: u32, max_buyin_bb: u32) -> Result<()> {
+        if buyin < 0 {
+            return Err(PokerError::Game("Buy-in cannot be negative".to_string()));
+        }
+        let min_buyin = self.big_blind * min_buyin_bb as i64;
+        let max_buyin = self.big_blind * max_buyin_bb as i64;
+        if buyin < min_buyin {
+            return Err(PokerError::Game(format!(
+                "Buy-in must be at least {} big blinds",
+                min_buyin_bb
+            )));
+        }
+        if buyin > max_buyin {
+            return Err(PokerError::Game(format!(
+                "Buy-in cannot exceed {} big blinds",
+                max_buyin_bb
+            )));
+        }
+        Ok(())
     }
 }
 

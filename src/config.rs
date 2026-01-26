@@ -37,16 +37,16 @@ impl Config {
     pub fn from_env() -> Result<Self, String> {
         let config = Self {
             server_host: Self::get_env_string("POKER_SERVER_HOST", "127.0.0.1"),
-            server_port: Self::get_env_u16("POKER_SERVER_PORT", 8080),
+            server_port: Self::get_env("POKER_SERVER_PORT", 8080),
             database_url: Self::get_env_string("POKER_DATABASE_URL", "sqlite:poker.db"),
-            max_tables: Self::get_env_usize("POKER_MAX_TABLES", 5),
-            disconnect_grace_period_secs: Self::get_env_u64("POKER_DISCONNECT_GRACE_SECS", 30),
-            small_blind: Self::get_env_i64("POKER_SMALL_BLIND", 50),
-            big_blind: Self::get_env_i64("POKER_BIG_BLIND", 100),
-            min_buyin_bb: Self::get_env_u32("POKER_MIN_BUYIN_BB", 20),
-            max_buyin_bb: Self::get_env_u32("POKER_MAX_BUYIN_BB", 100),
-            faucet_amount: Self::get_env_i64("POKER_FAUCET_AMOUNT", 100),
-            starting_chips: Self::get_env_i64("POKER_STARTING_CHIPS", 100),
+            max_tables: Self::get_env("POKER_MAX_TABLES", 5),
+            disconnect_grace_period_secs: Self::get_env("POKER_DISCONNECT_GRACE_SECS", 30),
+            small_blind: Self::get_env("POKER_SMALL_BLIND", 50),
+            big_blind: Self::get_env("POKER_BIG_BLIND", 100),
+            min_buyin_bb: Self::get_env("POKER_MIN_BUYIN_BB", 20),
+            max_buyin_bb: Self::get_env("POKER_MAX_BUYIN_BB", 100),
+            faucet_amount: Self::get_env("POKER_FAUCET_AMOUNT", 100),
+            starting_chips: Self::get_env("POKER_STARTING_CHIPS", 100),
         };
         config.validate()?;
         Ok(config)
@@ -56,35 +56,10 @@ impl Config {
         std::env::var(key).unwrap_or_else(|_| default.to_string())
     }
 
-    fn get_env_u16(key: &str, default: u16) -> u16 {
-        std::env::var(key)
-            .ok()
-            .and_then(|s| s.parse().ok())
-            .unwrap_or(default)
-    }
-
-    fn get_env_u32(key: &str, default: u32) -> u32 {
-        std::env::var(key)
-            .ok()
-            .and_then(|s| s.parse().ok())
-            .unwrap_or(default)
-    }
-
-    fn get_env_usize(key: &str, default: usize) -> usize {
-        std::env::var(key)
-            .ok()
-            .and_then(|s| s.parse().ok())
-            .unwrap_or(default)
-    }
-
-    fn get_env_u64(key: &str, default: u64) -> u64 {
-        std::env::var(key)
-            .ok()
-            .and_then(|s| s.parse().ok())
-            .unwrap_or(default)
-    }
-
-    fn get_env_i64(key: &str, default: i64) -> i64 {
+    fn get_env<T: std::str::FromStr>(key: &str, default: T) -> T
+    where
+        T::Err: std::fmt::Display,
+    {
         std::env::var(key)
             .ok()
             .and_then(|s| s.parse().ok())

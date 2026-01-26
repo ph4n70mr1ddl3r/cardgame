@@ -2,6 +2,15 @@ use super::card::{Card, Deck};
 use crate::error::Result;
 use serde::{Deserialize, Serialize};
 
+pub const MAX_PLAYERS: usize = 2;
+pub const CARDS_IN_DECK: usize = 52;
+pub const HOLE_CARDS: usize = 2;
+pub const COMMUNITY_CARDS: usize = 5;
+pub const MIN_USERNAME_LEN: usize = 3;
+pub const MAX_USERNAME_LEN: usize = 20;
+pub const MIN_PASSWORD_LEN: usize = 8;
+pub const MAX_PASSWORD_LEN: usize = 128;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum GameStage {
@@ -127,9 +136,13 @@ impl GameState {
     }
 
     pub fn add_player(&mut self, player_id: i64, username: String, buyin: i64) -> Result<()> {
-        if self.players.len() >= 2 {
+        if self.players.len() >= MAX_PLAYERS {
             return Err(crate::error::PokerError::Game(
-                "Cannot add more than 2 players in heads-up poker".to_string(),
+                format!(
+                    "Cannot add more than {} players in heads-up poker",
+                    MAX_PLAYERS
+                )
+                .to_string(),
             ));
         }
         let is_dealer = self.players.is_empty();
@@ -139,7 +152,7 @@ impl GameState {
     }
 
     pub fn is_ready_to_start(&self) -> bool {
-        self.players.len() == 2 && self.stage == GameStage::WaitingForPlayers
+        self.players.len() == MAX_PLAYERS && self.stage == GameStage::WaitingForPlayers
     }
 
     pub fn active_players(&self) -> impl Iterator<Item = &PlayerGameState> {

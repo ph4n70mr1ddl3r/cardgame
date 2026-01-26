@@ -44,9 +44,12 @@ impl Dealer {
         let sb_player_idx = game.dealer_index;
         let bb_player_idx = (game.dealer_index + 1) % game.players.len();
 
+        let sb_actual = game.small_blind.min(game.players[sb_player_idx].chips);
+        let bb_actual = game.big_blind.min(game.players[bb_player_idx].chips);
+
         Self::post_blind(game, sb_player_idx, game.small_blind)?;
         Self::post_blind(game, bb_player_idx, game.big_blind)?;
-        game.current_bet = game.big_blind;
+        game.current_bet = bb_actual.max(sb_actual);
 
         Ok(())
     }
@@ -73,7 +76,7 @@ impl Dealer {
     }
 
     fn deal_hole_cards(game: &mut GameState) -> Result<()> {
-        for _ in 0..2 {
+        for _ in 0..crate::models::game::HOLE_CARDS {
             for player in &mut game.players {
                 if let Some(card) = game.deck.deal() {
                     player.hole_cards.push(card);
