@@ -128,8 +128,11 @@ impl Config {
             ));
         }
 
-        let max_buyin = self.big_blind.checked_mul(self.max_buyin_bb as i64);
-        if max_buyin.is_none() {
+        if self
+            .big_blind
+            .checked_mul(self.max_buyin_bb as i64)
+            .is_none()
+        {
             return Err("Invalid configuration: max_buyin_bb would overflow i64".to_string());
         }
 

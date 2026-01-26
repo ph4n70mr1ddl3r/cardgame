@@ -96,14 +96,11 @@ impl Database {
         if username.len() < crate::models::game::MIN_USERNAME_LEN
             || username.len() > crate::models::game::MAX_USERNAME_LEN
         {
-            return Err(crate::error::PokerError::Game(
-                format!(
-                    "Username must be between {} and {} characters",
-                    crate::models::game::MIN_USERNAME_LEN,
-                    crate::models::game::MAX_USERNAME_LEN
-                )
-                .to_string(),
-            ));
+            return Err(crate::error::PokerError::Game(format!(
+                "Username must be between {} and {} characters",
+                crate::models::game::MIN_USERNAME_LEN,
+                crate::models::game::MAX_USERNAME_LEN
+            )));
         }
         if !username.chars().all(|c| c.is_alphanumeric() || c == '_') {
             return Err(crate::error::PokerError::Game(
@@ -123,14 +120,11 @@ impl Database {
         if password.len() < crate::models::game::MIN_PASSWORD_LEN
             || password.len() > crate::models::game::MAX_PASSWORD_LEN
         {
-            return Err(crate::error::PokerError::Game(
-                format!(
-                    "Password must be between {} and {} characters",
-                    crate::models::game::MIN_PASSWORD_LEN,
-                    crate::models::game::MAX_PASSWORD_LEN
-                )
-                .to_string(),
-            ));
+            return Err(crate::error::PokerError::Game(format!(
+                "Password must be between {} and {} characters",
+                crate::models::game::MIN_PASSWORD_LEN,
+                crate::models::game::MAX_PASSWORD_LEN
+            )));
         }
         let has_upper = password.chars().any(|c| c.is_uppercase());
         let has_lower = password.chars().any(|c| c.is_lowercase());
@@ -190,10 +184,23 @@ impl Database {
     }
 
     pub async fn update_player_chips(&self, player_id: i64, delta: i64) -> Result<()> {
-        sqlx::query("UPDATE players SET chips = chips + ? WHERE id = ? AND chips + ? >= 0")
-            .bind(delta)
+        let Some(new_chips) = sqlx::query_scalar::<_, i64>(
+            "SELECT chips FROM players WHERE id = ?"
+        )
+        .bind(player_id)
+        .fetch_optional(&self.pool)
+        .await?
+        .and_then(|chips| chips.checked_add(delta)) else {
+            return Err(crate::error::PokerError::Game("Chip overflow or player not found".to_string()));
+        };
+
+        if new_chips < 0 {
+            return Err(crate::error::PokerError::Game("Insufficient chips".to_string()));
+        }
+
+        sqlx::query("UPDATE players SET chips = ? WHERE id = ?")
+            .bind(new_chips)
             .bind(player_id)
-            .bind(delta)
             .execute(&self.pool)
             .await?;
         Ok(())

@@ -1,12 +1,11 @@
-use poker_server::error::{PokerError, Result};
 use poker_server::{db::Database, init_logging, Config};
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> poker_server::error::Result<()> {
     init_logging();
     tracing::info!("Poker Server Starting...");
 
-    let config = Config::from_env().map_err(PokerError::Game)?;
+    let config = Config::from_env().map_err(poker_server::error::PokerError::Game)?;
     tracing::info!(
         "Server will run on {}:{}",
         config.server_host,
@@ -14,9 +13,7 @@ async fn main() -> Result<()> {
     );
     tracing::info!("Database: {}", config.database_url);
 
-    let db = Database::new(&config.database_url, config.starting_chips)
-        .await
-        .map_err(|e| PokerError::Game(format!("Failed to connect to database: {}", e)))?;
+    let db = Database::new(&config.database_url, config.starting_chips).await?;
     db.initialize_schema().await?;
     tracing::info!("Database initialized");
 
