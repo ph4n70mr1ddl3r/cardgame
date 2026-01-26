@@ -1,6 +1,6 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
     pub server_host: String,
     pub server_port: u16,
@@ -34,6 +34,7 @@ impl Default for Config {
 }
 
 impl Config {
+    #[allow(dead_code)]
     pub fn from_env() -> Result<Self, String> {
         let config = Self {
             server_host: Self::get_env_string("POKER_SERVER_HOST", "127.0.0.1"),

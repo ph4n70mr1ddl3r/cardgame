@@ -7,9 +7,7 @@ async fn main() -> Result<()> {
     tracing::info!("Poker Server Starting...");
 
     let config = Config::default();
-    config
-        .validate()
-        .map_err(|e| PokerError::Game(format!("Config validation failed: {}", e)))?;
+    config.validate().map_err(PokerError::Game)?;
     tracing::info!(
         "Server will run on {}:{}",
         config.server_host,

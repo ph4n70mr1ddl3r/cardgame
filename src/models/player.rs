@@ -28,12 +28,10 @@ impl Player {
     }
 
     pub fn top_up(&mut self, faucet_amount: i64, threshold: i64) -> Result<(), String> {
-        if faucet_amount < threshold {
-            return Err("Faucet amount must be >= threshold".to_string());
+        if !self.can_top_up(threshold) {
+            return Err("Player already has enough chips to top up".to_string());
         }
-        if self.can_top_up(threshold) {
-            self.chips = faucet_amount;
-        }
+        self.chips = faucet_amount;
         Ok(())
     }
 
@@ -94,7 +92,7 @@ mod tests {
 
         // Cannot top up when chips >= 100
         assert!(!player.can_top_up(threshold));
-        player.top_up(100, threshold).unwrap();
+        assert!(player.top_up(100, threshold).is_err());
         assert_eq!(player.chips, 100); // Unchanged
     }
 
