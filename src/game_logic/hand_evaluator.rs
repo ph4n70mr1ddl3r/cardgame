@@ -206,6 +206,17 @@ fn evaluate_five_cards(cards: &[Card]) -> EvaluatedHand {
     }
 }
 
+/// Checks if a set of cards forms a straight.
+///
+/// Handles both regular straights and the special "wheel" straight (A-2-3-4-5).
+///
+/// # Arguments
+///
+/// * `cards` - A slice of 5 cards sorted in descending order
+///
+/// # Returns
+///
+/// * `bool` - True if the cards form a straight, false otherwise
 fn check_straight(cards: &[Card]) -> bool {
     let values: Vec<u8> = cards.iter().map(|c| c.rank as u8).collect();
 
@@ -222,6 +233,16 @@ fn check_straight(cards: &[Card]) -> bool {
     false
 }
 
+/// Generates all possible combinations of k indices from n items.
+///
+/// # Arguments
+///
+/// * `n` - Total number of items
+/// * `k` - Size of each combination
+///
+/// # Returns
+///
+/// * `Vec<Vec<usize>>` - All combinations of indices
 fn combinations_indices(n: usize, k: usize) -> Vec<Vec<usize>> {
     if k > n {
         return vec![];
@@ -233,8 +254,15 @@ fn combinations_indices(n: usize, k: usize) -> Vec<Vec<usize>> {
     result
 }
 
-// Note: Recursion depth is limited by k (max 5 for poker hands), so stack overflow is not a concern
-
+/// Recursive helper function for generating combinations.
+///
+/// # Arguments
+///
+/// * `n` - Total number of items
+/// * `k` - Desired combination size
+/// * `start` - Starting index for current recursion level
+/// * `combo` - Current combination being built
+/// * `result` - Accumulator for all complete combinations
 fn combine_indices_helper(
     n: usize,
     k: usize,
@@ -254,6 +282,15 @@ fn combine_indices_helper(
     }
 }
 
+/// Returns the human-readable name of a card rank.
+///
+/// # Arguments
+///
+/// * `rank` - The rank to get the name for
+///
+/// # Returns
+///
+/// * `&'static str` - The rank name as a string slice
 fn rank_name(rank: Rank) -> &'static str {
     match rank {
         Rank::Two => "Two",

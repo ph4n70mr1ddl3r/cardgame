@@ -94,21 +94,24 @@ impl Dealer {
         game.stage = stage;
         game.current_bet = 0;
 
-        // Burn one card
+        // Burn one card: In poker, the top card of the deck is discarded ("burned")
+        // before dealing community cards to prevent marking or card counting.
+        // The burned card is not used in play.
         game.deck.deal();
 
-        // Deal community cards
+        // Deal community cards to the table
         for _ in 0..num_cards {
             if let Some(card) = game.deck.deal() {
                 game.community_cards.push(card);
             }
         }
 
-        // Reset round bets
+        // Reset round bets for the new betting round
         for player in &mut game.players {
             player.reset_round_bet();
         }
 
+        // Set current player to small blind (non-dealer in heads-up)
         game.current_player_index = Some((game.dealer_index + 1) % game.players.len());
 
         Ok(())

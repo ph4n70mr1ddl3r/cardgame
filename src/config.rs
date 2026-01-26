@@ -37,16 +37,21 @@ impl Config {
     pub fn from_env() -> Result<Self, String> {
         let config = Self {
             server_host: Self::get_env_string("POKER_SERVER_HOST", "127.0.0.1"),
-            server_port: Self::get_env("POKER_SERVER_PORT", 8080),
+            server_port: Self::get_env("POKER_SERVER_PORT", 8080, Some(1024), Some(65535)),
             database_url: Self::get_env_string("POKER_DATABASE_URL", "sqlite:poker.db"),
-            max_tables: Self::get_env("POKER_MAX_TABLES", 5),
-            disconnect_grace_period_secs: Self::get_env("POKER_DISCONNECT_GRACE_SECS", 30),
-            small_blind: Self::get_env("POKER_SMALL_BLIND", 50),
-            big_blind: Self::get_env("POKER_BIG_BLIND", 100),
-            min_buyin_bb: Self::get_env("POKER_MIN_BUYIN_BB", 20),
-            max_buyin_bb: Self::get_env("POKER_MAX_BUYIN_BB", 100),
-            faucet_amount: Self::get_env("POKER_FAUCET_AMOUNT", 100),
-            starting_chips: Self::get_env("POKER_STARTING_CHIPS", 100),
+            max_tables: Self::get_env("POKER_MAX_TABLES", 5, Some(1), Some(100)),
+            disconnect_grace_period_secs: Self::get_env(
+                "POKER_DISCONNECT_GRACE_SECS",
+                30,
+                Some(1),
+                Some(3600),
+            ),
+            small_blind: Self::get_env("POKER_SMALL_BLIND", 50, Some(1), Some(10000)),
+            big_blind: Self::get_env("POKER_BIG_BLIND", 100, Some(1), Some(10000)),
+            min_buyin_bb: Self::get_env("POKER_MIN_BUYIN_BB", 20, Some(1), Some(1000)),
+            max_buyin_bb: Self::get_env("POKER_MAX_BUYIN_BB", 100, Some(1), Some(1000)),
+            faucet_amount: Self::get_env("POKER_FAUCET_AMOUNT", 100, Some(1), Some(100000)),
+            starting_chips: Self::get_env("POKER_STARTING_CHIPS", 100, Some(1), Some(100000)),
         };
         config.validate()?;
         Ok(config)
@@ -56,13 +61,40 @@ impl Config {
         std::env::var(key).unwrap_or_else(|_| default.to_string())
     }
 
-    fn get_env<T: std::str::FromStr>(key: &str, default: T) -> T
+    fn get_env<T: std::str::FromStr + std::fmt::Display>(
+        key: &str,
+        default: T,
+        min: Option<T>,
+        max: Option<T>,
+    ) -> T
     where
         T::Err: std::fmt::Display,
+        T: PartialOrd + Copy,
     {
         std::env::var(key)
             .ok()
-            .and_then(|s| s.parse().ok())
+            .and_then(|s| {
+                let value = s.parse::<T>().ok()?;
+                if let Some(min_val) = min {
+                    if value < min_val {
+                        eprintln!(
+                            "Warning: {} value {} is below minimum {}, using default {}",
+                            key, value, min_val, default
+                        );
+                        return None;
+                    }
+                }
+                if let Some(max_val) = max {
+                    if value > max_val {
+                        eprintln!(
+                            "Warning: {} value {} exceeds maximum {}, using default {}",
+                            key, value, max_val, default
+                        );
+                        return None;
+                    }
+                }
+                Some(value)
+            })
             .unwrap_or(default)
     }
 

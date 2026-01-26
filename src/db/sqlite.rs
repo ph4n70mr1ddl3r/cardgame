@@ -184,18 +184,22 @@ impl Database {
     }
 
     pub async fn update_player_chips(&self, player_id: i64, delta: i64) -> Result<()> {
-        let Some(new_chips) = sqlx::query_scalar::<_, i64>(
-            "SELECT chips FROM players WHERE id = ?"
-        )
-        .bind(player_id)
-        .fetch_optional(&self.pool)
-        .await?
-        .and_then(|chips| chips.checked_add(delta)) else {
-            return Err(crate::error::PokerError::Game("Chip overflow or player not found".to_string()));
+        let Some(new_chips) =
+            sqlx::query_scalar::<_, i64>("SELECT chips FROM players WHERE id = ?")
+                .bind(player_id)
+                .fetch_optional(&self.pool)
+                .await?
+                .and_then(|chips| chips.checked_add(delta))
+        else {
+            return Err(crate::error::PokerError::Game(
+                "Chip overflow or player not found".to_string(),
+            ));
         };
 
         if new_chips < 0 {
-            return Err(crate::error::PokerError::Game("Insufficient chips".to_string()));
+            return Err(crate::error::PokerError::Game(
+                "Insufficient chips".to_string(),
+            ));
         }
 
         sqlx::query("UPDATE players SET chips = ? WHERE id = ?")
