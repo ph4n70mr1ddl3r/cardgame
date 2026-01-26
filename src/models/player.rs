@@ -27,10 +27,14 @@ impl Player {
         self.chips < threshold
     }
 
-    pub fn top_up(&mut self, faucet_amount: i64, threshold: i64) {
+    pub fn top_up(&mut self, faucet_amount: i64, threshold: i64) -> Result<(), String> {
+        if faucet_amount < threshold {
+            return Err("Faucet amount must be >= threshold".to_string());
+        }
         if self.can_top_up(threshold) {
             self.chips = faucet_amount;
         }
+        Ok(())
     }
 
     pub fn deduct_chips(&mut self, amount: i64) -> bool {
@@ -85,12 +89,12 @@ mod tests {
         let threshold = 100;
 
         assert!(player.can_top_up(threshold));
-        player.top_up(100, threshold);
+        assert!(player.top_up(100, threshold).is_ok());
         assert_eq!(player.chips, 100);
 
         // Cannot top up when chips >= 100
         assert!(!player.can_top_up(threshold));
-        player.top_up(100, threshold);
+        player.top_up(100, threshold).unwrap();
         assert_eq!(player.chips, 100); // Unchanged
     }
 

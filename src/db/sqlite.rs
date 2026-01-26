@@ -9,12 +9,16 @@ use sqlx::{sqlite::SqlitePool, Row};
 
 pub struct Database {
     pool: SqlitePool,
+    starting_chips: i64,
 }
 
 impl Database {
-    pub async fn new(database_url: &str) -> Result<Self> {
+    pub async fn new(database_url: &str, starting_chips: i64) -> Result<Self> {
         let pool = SqlitePool::connect(database_url).await?;
-        Ok(Self { pool })
+        Ok(Self {
+            pool,
+            starting_chips,
+        })
     }
 
     pub async fn initialize_schema(&self) -> Result<()> {
@@ -99,13 +103,12 @@ impl Database {
             ));
         }
         let password_hash = self.hash_password(password)?;
-        let starting_chips = 100;
 
         let result =
             sqlx::query("INSERT INTO players (username, password_hash, chips) VALUES (?, ?, ?)")
                 .bind(username)
                 .bind(&password_hash)
-                .bind(starting_chips)
+                .bind(self.starting_chips)
                 .execute(&self.pool)
                 .await?;
 
@@ -207,7 +210,7 @@ mod tests {
     use super::*;
 
     async fn setup_test_db() -> Database {
-        let db = Database::new("sqlite::memory:").await.unwrap();
+        let db = Database::new("sqlite::memory:", 100).await.unwrap();
         db.initialize_schema().await.unwrap();
         db
     }

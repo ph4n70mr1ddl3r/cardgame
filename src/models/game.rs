@@ -104,6 +104,9 @@ pub struct SidePot {
     pub eligible_players: Vec<usize>,
 }
 
+// TODO: Implement side pot calculation and distribution logic
+// Side pots are needed when players go all-in with different amounts
+
 impl GameState {
     pub fn new(table_id: i64, small_blind: i64, big_blind: i64) -> Self {
         Self {

@@ -219,6 +219,8 @@ fn combinations_indices(n: usize, k: usize) -> Vec<Vec<usize>> {
     result
 }
 
+// Note: Recursion depth is limited by k (max 5 for poker hands), so stack overflow is not a concern
+
 fn combine_indices_helper(
     n: usize,
     k: usize,
