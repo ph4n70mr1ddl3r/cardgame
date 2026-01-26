@@ -29,9 +29,9 @@ impl Database {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
-                chips INTEGER DEFAULT 100,
-                hands_played INTEGER DEFAULT 0,
-                hands_won INTEGER DEFAULT 0,
+                chips INTEGER DEFAULT 100 CHECK(chips >= 0),
+                hands_played INTEGER DEFAULT 0 CHECK(hands_played >= 0),
+                hands_won INTEGER DEFAULT 0 CHECK(hands_won >= 0),
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
             "#,
@@ -89,7 +89,12 @@ impl Database {
                 "Username can only contain letters, numbers, and underscores".to_string(),
             ));
         }
-        if !username.chars().next().map(|c| c.is_alphabetic()).unwrap_or(false) {
+        if !username
+            .chars()
+            .next()
+            .map(|c| c.is_alphabetic())
+            .unwrap_or(false)
+        {
             return Err(crate::error::PokerError::Game(
                 "Username must start with a letter".to_string(),
             ));

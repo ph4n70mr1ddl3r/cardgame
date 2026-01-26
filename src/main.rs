@@ -1,5 +1,5 @@
 use poker_server::error::{PokerError, Result};
-use poker_server::{db::Database, Config, init_logging};
+use poker_server::{db::Database, init_logging, Config};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -12,7 +12,8 @@ async fn main() -> Result<()> {
         .map_err(|e| PokerError::Game(format!("Config validation failed: {}", e)))?;
     tracing::info!(
         "Server will run on {}:{}",
-        config.server_host, config.server_port
+        config.server_host,
+        config.server_port
     );
     tracing::info!("Database: {}", config.database_url);
 
