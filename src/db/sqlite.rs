@@ -29,7 +29,7 @@ impl Database {
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 password_hash TEXT NOT NULL,
-                chips INTEGER DEFAULT 100 CHECK(chips >= 0),
+                chips INTEGER NOT NULL CHECK(chips >= 0),
                 hands_played INTEGER DEFAULT 0 CHECK(hands_played >= 0),
                 hands_won INTEGER DEFAULT 0 CHECK(hands_won >= 0),
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -184,29 +184,19 @@ impl Database {
     }
 
     pub async fn update_player_chips(&self, player_id: i64, delta: i64) -> Result<()> {
-        let Some(new_chips) =
-            sqlx::query_scalar::<_, i64>("SELECT chips FROM players WHERE id = ?")
-                .bind(player_id)
-                .fetch_optional(&self.pool)
-                .await?
-                .and_then(|chips| chips.checked_add(delta))
-        else {
-            return Err(crate::error::PokerError::Game(
-                "Chip overflow or player not found".to_string(),
-            ));
-        };
+        let result = sqlx::query("UPDATE players SET chips = chips + ? WHERE id = ? AND chips + ? >= 0")
+            .bind(delta)
+            .bind(player_id)
+            .bind(delta)
+            .execute(&self.pool)
+            .await?;
 
-        if new_chips < 0 {
+        if result.rows_affected() == 0 {
             return Err(crate::error::PokerError::Game(
-                "Insufficient chips".to_string(),
+                "Insufficient chips or player not found".to_string(),
             ));
         }
 
-        sqlx::query("UPDATE players SET chips = ? WHERE id = ?")
-            .bind(new_chips)
-            .bind(player_id)
-            .execute(&self.pool)
-            .await?;
         Ok(())
     }
 

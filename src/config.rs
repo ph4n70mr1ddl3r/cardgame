@@ -34,7 +34,7 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn from_env() -> Result<Self, String> {
+    pub fn from_env() -> Result<Self, crate::error::PokerError> {
         let config = Self {
             server_host: Self::get_env_string("POKER_SERVER_HOST", "127.0.0.1"),
             server_port: Self::get_env("POKER_SERVER_PORT", 8080, Some(1024), Some(65535)),
@@ -61,15 +61,10 @@ impl Config {
         std::env::var(key).unwrap_or_else(|_| default.to_string())
     }
 
-    fn get_env<T: std::str::FromStr + std::fmt::Display>(
-        key: &str,
-        default: T,
-        min: Option<T>,
-        max: Option<T>,
-    ) -> T
+    fn get_env<T>(key: &str, default: T, min: Option<T>, max: Option<T>) -> T
     where
+        T: std::str::FromStr + std::fmt::Display + PartialOrd + Copy,
         T::Err: std::fmt::Display,
-        T: PartialOrd + Copy,
     {
         std::env::var(key)
             .ok()
@@ -98,66 +93,66 @@ impl Config {
             .unwrap_or(default)
     }
 
-    pub fn validate(&self) -> Result<(), String> {
+    pub fn validate(&self) -> Result<(), crate::error::PokerError> {
         if self.server_port == 0 {
-            return Err(format!(
+            return Err(crate::error::PokerError::Game(format!(
                 "Invalid POKER_SERVER_PORT ({}): must be > 0",
                 self.server_port
-            ));
+            )));
         }
         if self.max_tables == 0 {
-            return Err(format!(
+            return Err(crate::error::PokerError::Game(format!(
                 "Invalid POKER_MAX_TABLES ({}): must be > 0",
                 self.max_tables
-            ));
+            )));
         }
         if self.small_blind <= 0 {
-            return Err(format!(
+            return Err(crate::error::PokerError::Game(format!(
                 "Invalid POKER_SMALL_BLIND ({}): must be > 0",
                 self.small_blind
-            ));
+            )));
         }
         if self.big_blind <= 0 {
-            return Err(format!(
+            return Err(crate::error::PokerError::Game(format!(
                 "Invalid POKER_BIG_BLIND ({}): must be > 0",
                 self.big_blind
-            ));
+            )));
         }
         if self.big_blind < self.small_blind {
-            return Err(format!(
+            return Err(crate::error::PokerError::Game(format!(
                 "Invalid blind configuration: POKER_BIG_BLIND ({}) must be >= POKER_SMALL_BLIND ({})",
                 self.big_blind, self.small_blind
-            ));
+            )));
         }
         if self.min_buyin_bb == 0 {
-            return Err(format!(
+            return Err(crate::error::PokerError::Game(format!(
                 "Invalid POKER_MIN_BUYIN_BB ({}): must be > 0",
                 self.min_buyin_bb
-            ));
+            )));
         }
         if self.max_buyin_bb < self.min_buyin_bb {
-            return Err(format!(
+            return Err(crate::error::PokerError::Game(format!(
                 "Invalid buy-in configuration: POKER_MAX_BUYIN_BB ({}) must be >= POKER_MIN_BUYIN_BB ({})",
                 self.max_buyin_bb, self.min_buyin_bb
-            ));
+            )));
         }
         if self.faucet_amount <= 0 {
-            return Err(format!(
+            return Err(crate::error::PokerError::Game(format!(
                 "Invalid POKER_FAUCET_AMOUNT ({}): must be > 0",
                 self.faucet_amount
-            ));
+            )));
         }
         if self.starting_chips <= 0 {
-            return Err(format!(
+            return Err(crate::error::PokerError::Game(format!(
                 "Invalid POKER_STARTING_CHIPS ({}): must be > 0",
                 self.starting_chips
-            ));
+            )));
         }
         if self.disconnect_grace_period_secs == 0 {
-            return Err(format!(
+            return Err(crate::error::PokerError::Game(format!(
                 "Invalid POKER_DISCONNECT_GRACE_SECS ({}): must be > 0",
                 self.disconnect_grace_period_secs
-            ));
+            )));
         }
 
         if self
@@ -165,7 +160,9 @@ impl Config {
             .checked_mul(self.max_buyin_bb as i64)
             .is_none()
         {
-            return Err("Invalid configuration: max_buyin_bb would overflow i64".to_string());
+            return Err(crate::error::PokerError::Game(
+                "Invalid configuration: max_buyin_bb would overflow i64".to_string(),
+            ));
         }
 
         Ok(())

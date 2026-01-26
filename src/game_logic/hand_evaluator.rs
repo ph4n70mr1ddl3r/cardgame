@@ -81,7 +81,12 @@ pub fn evaluate_hand(mut cards: Vec<Card>) -> Result<EvaluatedHand> {
 }
 
 fn evaluate_five_cards(cards: &[Card]) -> EvaluatedHand {
-    assert_eq!(cards.len(), 5);
+    if cards.len() != 5 {
+        panic!(
+            "evaluate_five_cards: Expected exactly 5 cards, got {}",
+            cards.len()
+        );
+    }
 
     let is_flush = cards.iter().all(|c| c.suit == cards[0].suit);
     let is_straight = check_straight(cards);

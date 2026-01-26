@@ -97,7 +97,9 @@ impl Dealer {
         // Burn one card: In poker, the top card of the deck is discarded ("burned")
         // before dealing community cards to prevent marking or card counting.
         // The burned card is not used in play.
-        game.deck.deal();
+        if game.deck.deal().is_some() {
+            tracing::debug!("Burned card before dealing {:?}", stage);
+        }
 
         // Deal community cards to the table
         for _ in 0..num_cards {

@@ -2,13 +2,28 @@ use super::card::{Card, Deck};
 use crate::error::Result;
 use serde::{Deserialize, Serialize};
 
+/// Maximum number of players per table (currently heads-up only)
 pub const MAX_PLAYERS: usize = 2;
+
+/// Standard number of cards in a poker deck
 pub const CARDS_IN_DECK: usize = 52;
+
+/// Number of hole cards dealt to each player
 pub const HOLE_CARDS: usize = 2;
+
+/// Number of community cards (flop, turn, river)
 pub const COMMUNITY_CARDS: usize = 5;
+
+/// Minimum username length
 pub const MIN_USERNAME_LEN: usize = 3;
+
+/// Maximum username length
 pub const MAX_USERNAME_LEN: usize = 20;
+
+/// Minimum password length
 pub const MIN_PASSWORD_LEN: usize = 8;
+
+/// Maximum password length
 pub const MAX_PASSWORD_LEN: usize = 128;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

@@ -74,7 +74,9 @@ pub struct Deck {
 
 impl Deck {
     pub fn new() -> Self {
-        let mut cards = Vec::with_capacity(52);
+        let mut deck = Self {
+            cards: Vec::with_capacity(52),
+        };
         for suit in [Suit::Hearts, Suit::Diamonds, Suit::Clubs, Suit::Spades] {
             for rank in [
                 Rank::Two,
@@ -91,10 +93,11 @@ impl Deck {
                 Rank::King,
                 Rank::Ace,
             ] {
-                cards.push(Card::new(suit, rank));
+                deck.cards.push(Card::new(suit, rank));
             }
         }
-        Self { cards }
+        deck.shuffle();
+        deck
     }
 
     pub fn shuffle(&mut self) {

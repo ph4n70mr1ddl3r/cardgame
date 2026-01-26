@@ -5,7 +5,7 @@ async fn main() -> poker_server::error::Result<()> {
     init_logging();
     tracing::info!("Poker Server Starting...");
 
-    let config = Config::from_env().map_err(poker_server::error::PokerError::Game)?;
+    let config = Config::from_env()?;
     tracing::info!(
         "Server will run on {}:{}",
         config.server_host,
