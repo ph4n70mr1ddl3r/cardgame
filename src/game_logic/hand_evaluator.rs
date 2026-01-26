@@ -38,6 +38,22 @@ impl Ord for EvaluatedHand {
     }
 }
 
+/// Evaluates a 7-card poker hand (2 hole cards + 5 community cards) and returns the best 5-card hand.
+///
+/// This function examines all 21 possible 5-card combinations and returns the strongest one according
+/// to poker hand rankings. It handles all 10 standard poker hands with proper tie-breaking.
+///
+/// # Arguments
+///
+/// * `cards` - A vector of exactly 7 cards (2 hole + 5 community)
+///
+/// # Returns
+///
+/// * `Result<EvaluatedHand>` - The best possible 5-card hand with ranking information
+///
+/// # Errors
+///
+/// Returns an error if the input does not contain exactly 7 cards
 pub fn evaluate_hand(mut cards: Vec<Card>) -> Result<EvaluatedHand> {
     if cards.len() != 7 {
         return Err(PokerError::Game(format!(
@@ -46,10 +62,8 @@ pub fn evaluate_hand(mut cards: Vec<Card>) -> Result<EvaluatedHand> {
         )));
     }
 
-    // Sort cards by rank (descending)
     cards.sort_by(|a, b| b.rank.cmp(&a.rank));
 
-    // Check all 21 combinations of 5 from 7
     let mut best_hand = EvaluatedHand {
         hand_rank: HandRank::HighCard,
         rank_values: vec![],

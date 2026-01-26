@@ -27,35 +27,47 @@ impl Player {
         self.chips < threshold
     }
 
-    pub fn top_up(&mut self, faucet_amount: i64, threshold: i64) -> Result<(), String> {
+    pub fn top_up(
+        &mut self,
+        faucet_amount: i64,
+        threshold: i64,
+    ) -> Result<(), crate::error::PokerError> {
         if !self.can_top_up(threshold) {
-            return Err("Player already has enough chips to top up".to_string());
+            return Err(crate::error::PokerError::Game(
+                "Player already has enough chips to top up".to_string(),
+            ));
         }
         self.add_chips(faucet_amount)?;
         Ok(())
     }
 
-    pub fn deduct_chips(&mut self, amount: i64) -> Result<(), String> {
+    pub fn deduct_chips(&mut self, amount: i64) -> Result<(), crate::error::PokerError> {
         if amount < 0 {
-            return Err("Cannot deduct negative amount".to_string());
+            return Err(crate::error::PokerError::Game(
+                "Cannot deduct negative amount".to_string(),
+            ));
         }
         if amount > self.chips {
-            return Err("Insufficient chips".to_string());
+            return Err(crate::error::PokerError::Game(
+                "Insufficient chips".to_string(),
+            ));
         }
         self.chips -= amount;
         Ok(())
     }
 
-    pub fn add_chips(&mut self, amount: i64) -> Result<(), String> {
+    pub fn add_chips(&mut self, amount: i64) -> Result<(), crate::error::PokerError> {
         if amount < 0 {
-            return Err("Cannot add negative amount".to_string());
+            return Err(crate::error::PokerError::Game(
+                "Cannot add negative amount".to_string(),
+            ));
         }
         match self.chips.checked_add(amount) {
             Some(new_chips) => {
                 self.chips = new_chips;
                 Ok(())
             }
-            None => Err("Chip overflow".to_string()),
+            None => Err(crate::error::PokerError::Game("Chip overflow".to_string())),
         }
     }
 }
@@ -93,7 +105,7 @@ mod tests {
         // Cannot top up when chips >= 100
         assert!(!player.can_top_up(threshold));
         assert!(player.top_up(100, threshold).is_err());
-        assert_eq!(player.chips, 150); // Unchanged
+        assert_eq!(player.chips, 150);
     }
 
     #[test]
@@ -103,8 +115,8 @@ mod tests {
         assert!(player.deduct_chips(50).is_ok());
         assert_eq!(player.chips, 50);
 
-        assert!(player.deduct_chips(100).is_err()); // Insufficient chips
-        assert_eq!(player.chips, 50); // Unchanged
+        assert!(player.deduct_chips(100).is_err());
+        assert_eq!(player.chips, 50);
 
         assert!(player.add_chips(75).is_ok());
         assert_eq!(player.chips, 125);

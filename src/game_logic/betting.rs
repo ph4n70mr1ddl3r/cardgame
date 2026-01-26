@@ -4,7 +4,22 @@ use crate::models::game::{GameState, PlayerAction, PlayerGameState};
 pub struct BettingRules;
 
 impl BettingRules {
-    /// Validate if a player action is legal in the current game state
+    /// Validates if a player action is legal in the current game state.
+    ///
+    /// This function checks all preconditions for an action including:
+    /// - Player has not folded
+    /// - Player is not all-in
+    /// - Action-specific rules (check vs call, raise limits, etc.)
+    ///
+    /// # Arguments
+    ///
+    /// * `game` - Current game state
+    /// * `player_idx` - Index of the player in the game's players vector
+    /// * `action` - The action to validate
+    ///
+    /// # Returns
+    ///
+    /// * `Result<()>` - Ok if action is valid, Err with reason if invalid
     pub fn validate_action(
         game: &GameState,
         player_idx: usize,
@@ -62,15 +77,15 @@ impl BettingRules {
             ));
         }
 
-        let total_needed = raise_to
-            .checked_sub(player.bet_this_round)
-            .ok_or_else(|| PokerError::InvalidAction("Invalid raise calculation".to_string()))?;
-
         if raise_to <= game.current_bet {
             return Err(PokerError::InvalidAction(
                 "Raise amount must be greater than current bet".to_string(),
             ));
         }
+
+        let total_needed = raise_to
+            .checked_sub(player.bet_this_round)
+            .ok_or_else(|| PokerError::InvalidAction("Invalid raise calculation".to_string()))?;
 
         let min_raise = if game.current_bet == game.big_blind {
             game.current_bet
@@ -107,7 +122,28 @@ impl BettingRules {
         Ok(())
     }
 
-    /// Apply an action to the game state
+    /// Applies a validated action to the game state, updating chips, pot, and player status.
+    ///
+    /// This function modifies the game state based on the action type:
+    /// - Fold: Marks player as folded
+    /// - Check: No chip changes
+    /// - Call: Adds chips to match current bet
+    /// - Raise: Increases the current bet
+    /// - AllIn: Bets all remaining chips
+    ///
+    /// # Arguments
+    ///
+    /// * `game` - Mutable reference to game state
+    /// * `player_idx` - Index of the player taking the action
+    /// * `action` - The action to apply
+    ///
+    /// # Returns
+    ///
+    /// * `Result<()>` - Ok if action applied successfully, Err if validation fails
+    ///
+    /// # Note
+    ///
+    /// This function calls `validate_action` internally to ensure the action is legal
     pub fn apply_action(
         game: &mut GameState,
         player_idx: usize,
@@ -198,7 +234,19 @@ impl BettingRules {
         Ok(())
     }
 
-    /// Check if the betting round is complete
+    /// Determines if the current betting round is complete.
+    ///
+    /// A round is complete when:
+    /// - Only one active player remains (others folded), OR
+    /// - All active players have either matched the current bet or are all-in
+    ///
+    /// # Arguments
+    ///
+    /// * `game` - Current game state
+    ///
+    /// # Returns
+    ///
+    /// * `bool` - True if the betting round is complete, false otherwise
     pub fn is_round_complete(game: &GameState) -> bool {
         let active_player_count = game.players.iter().filter(|p| !p.is_folded).count();
 

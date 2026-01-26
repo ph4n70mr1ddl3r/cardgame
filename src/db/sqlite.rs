@@ -43,7 +43,6 @@ impl Database {
             .execute(&self.pool)
             .await?;
 
-        // Create tables table
         sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS tables (
@@ -59,7 +58,10 @@ impl Database {
         .execute(&self.pool)
         .await?;
 
-        // Create game_sessions table
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_tables_name ON tables(name)")
+            .execute(&self.pool)
+            .await?;
+
         sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS game_sessions (
@@ -74,14 +76,33 @@ impl Database {
         .execute(&self.pool)
         .await?;
 
+        sqlx::query(
+            "CREATE INDEX IF NOT EXISTS idx_game_sessions_table_id ON game_sessions(table_id)",
+        )
+        .execute(&self.pool)
+        .await?;
+
+        sqlx::query(
+            "CREATE INDEX IF NOT EXISTS idx_game_sessions_started_at ON game_sessions(started_at)",
+        )
+        .execute(&self.pool)
+        .await?;
+
         Ok(())
     }
 
     // Player CRUD Operations
     pub async fn create_player(&self, username: &str, password: &str) -> Result<i64> {
-        if username.len() < crate::models::game::MIN_USERNAME_LEN || username.len() > crate::models::game::MAX_USERNAME_LEN {
+        if username.len() < crate::models::game::MIN_USERNAME_LEN
+            || username.len() > crate::models::game::MAX_USERNAME_LEN
+        {
             return Err(crate::error::PokerError::Game(
-                format!("Username must be between {} and {} characters", crate::models::game::MIN_USERNAME_LEN, crate::models::game::MAX_USERNAME_LEN).to_string(),
+                format!(
+                    "Username must be between {} and {} characters",
+                    crate::models::game::MIN_USERNAME_LEN,
+                    crate::models::game::MAX_USERNAME_LEN
+                )
+                .to_string(),
             ));
         }
         if !username.chars().all(|c| c.is_alphanumeric() || c == '_') {
@@ -99,9 +120,16 @@ impl Database {
                 "Username must start with a letter".to_string(),
             ));
         }
-        if password.len() < crate::models::game::MIN_PASSWORD_LEN || password.len() > crate::models::game::MAX_PASSWORD_LEN {
+        if password.len() < crate::models::game::MIN_PASSWORD_LEN
+            || password.len() > crate::models::game::MAX_PASSWORD_LEN
+        {
             return Err(crate::error::PokerError::Game(
-                format!("Password must be between {} and {} characters", crate::models::game::MIN_PASSWORD_LEN, crate::models::game::MAX_PASSWORD_LEN).to_string(),
+                format!(
+                    "Password must be between {} and {} characters",
+                    crate::models::game::MIN_PASSWORD_LEN,
+                    crate::models::game::MAX_PASSWORD_LEN
+                )
+                .to_string(),
             ));
         }
         let has_upper = password.chars().any(|c| c.is_uppercase());
