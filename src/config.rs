@@ -34,8 +34,8 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn from_env() -> Self {
-        let mut config = Self {
+    pub fn from_env() -> Result<Self, String> {
+        let config = Self {
             server_host: Self::get_env_string("POKER_SERVER_HOST", "127.0.0.1"),
             server_port: Self::get_env_u16("POKER_SERVER_PORT", 8080),
             database_url: Self::get_env_string("POKER_DATABASE_URL", "sqlite:poker.db"),
@@ -48,14 +48,8 @@ impl Config {
             faucet_amount: Self::get_env_i64("POKER_FAUCET_AMOUNT", 100),
             starting_chips: Self::get_env_i64("POKER_STARTING_CHIPS", 100),
         };
-        if let Err(e) = config.validate() {
-            eprintln!(
-                "Config validation error: {}, using default configuration",
-                e
-            );
-            config = Self::default();
-        }
-        config
+        config.validate()?;
+        Ok(config)
     }
 
     fn get_env_string(key: &str, default: &str) -> String {

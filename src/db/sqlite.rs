@@ -89,6 +89,11 @@ impl Database {
                 "Username can only contain letters, numbers, and underscores".to_string(),
             ));
         }
+        if !username.chars().next().map(|c| c.is_alphabetic()).unwrap_or(false) {
+            return Err(crate::error::PokerError::Game(
+                "Username must start with a letter".to_string(),
+            ));
+        }
         if password.len() < 8 || password.len() > 128 {
             return Err(crate::error::PokerError::Game(
                 "Password must be between 8 and 128 characters".to_string(),
@@ -264,5 +269,16 @@ mod tests {
         let player = db.get_player_by_id(player_id).await.unwrap().unwrap();
         assert_eq!(player.hands_played, 5);
         assert_eq!(player.hands_won, 2);
+    }
+
+    #[tokio::test]
+    async fn test_invalid_username() {
+        let db = setup_test_db().await;
+
+        let result = db.create_player("123user", "Password123").await;
+        assert!(result.is_err());
+
+        let result = db.create_player("", "Password123").await;
+        assert!(result.is_err());
     }
 }

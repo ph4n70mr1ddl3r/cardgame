@@ -217,13 +217,13 @@ impl BettingRules {
     pub fn get_valid_actions(
         game: &GameState,
         player_idx: usize,
-    ) -> Vec<crate::models::game::ValidAction> {
+    ) -> Result<Vec<crate::models::game::ValidAction>> {
         use crate::models::game::{PlayerAction, ValidAction};
         let player = &game.players[player_idx];
         let mut actions = Vec::new();
 
         if player.is_folded || player.is_all_in {
-            return actions;
+            return Ok(actions);
         }
 
         // Fold is always valid
@@ -258,14 +258,20 @@ impl BettingRules {
             let min_raise = if game.current_bet == game.big_blind {
                 game.current_bet
                     .checked_add(game.big_blind)
-                    .unwrap_or(i64::MAX)
+                    .ok_or_else(|| {
+                        PokerError::Game("Overflow in minimum raise calculation".to_string())
+                    })?
             } else {
-                game.current_bet.checked_mul(2).unwrap_or(i64::MAX)
+                game.current_bet.checked_mul(2).ok_or_else(|| {
+                    PokerError::Game("Overflow in minimum raise calculation".to_string())
+                })?
             };
             let max_raise = player
                 .chips
                 .checked_add(player.bet_this_round)
-                .unwrap_or(i64::MAX);
+                .ok_or_else(|| {
+                    PokerError::Game("Overflow in maximum raise calculation".to_string())
+                })?;
             actions.push(ValidAction {
                 action: PlayerAction::Raise(0),
                 min_raise: Some(min_raise),
@@ -282,7 +288,7 @@ impl BettingRules {
             });
         }
 
-        actions
+        Ok(actions)
     }
 }
 
@@ -394,7 +400,7 @@ mod tests {
         game.add_player(2, "player2".to_string(), 100).unwrap();
         Dealer::start_new_hand(&mut game).unwrap();
 
-        let actions = BettingRules::get_valid_actions(&game, 0);
+        let actions = BettingRules::get_valid_actions(&game, 0).unwrap();
 
         assert!(actions
             .iter()
