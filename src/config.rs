@@ -146,6 +146,12 @@ impl Config {
                 self.starting_chips
             ));
         }
+        if self.disconnect_grace_period_secs == 0 {
+            return Err(format!(
+                "Invalid POKER_DISCONNECT_GRACE_SECS ({}): must be > 0",
+                self.disconnect_grace_period_secs
+            ));
+        }
         Ok(())
     }
 }

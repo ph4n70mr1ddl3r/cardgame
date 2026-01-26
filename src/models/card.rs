@@ -110,6 +110,10 @@ impl Deck {
     pub fn remaining(&self) -> usize {
         self.cards.len()
     }
+
+    pub fn remaining_cards(&self) -> usize {
+        self.remaining()
+    }
 }
 
 impl Default for Deck {
