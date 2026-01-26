@@ -162,6 +162,11 @@ impl Database {
     }
 
     pub async fn update_player_chips(&self, player_id: i64, new_chips: i64) -> Result<()> {
+        if new_chips < 0 {
+            return Err(crate::error::PokerError::Game(
+                "Chips cannot be negative".to_string(),
+            ));
+        }
         sqlx::query("UPDATE players SET chips = ? WHERE id = ?")
             .bind(new_chips)
             .bind(player_id)
@@ -176,6 +181,11 @@ impl Database {
         hands_played_delta: i64,
         hands_won_delta: i64,
     ) -> Result<()> {
+        if hands_played_delta < 0 || hands_won_delta < 0 {
+            return Err(crate::error::PokerError::Game(
+                "Stat deltas cannot be negative".to_string(),
+            ));
+        }
         sqlx::query(
             "UPDATE players SET hands_played = hands_played + ?, hands_won = hands_won + ? WHERE id = ?"
         )

@@ -31,7 +31,7 @@ impl Player {
         if !self.can_top_up(threshold) {
             return Err("Player already has enough chips to top up".to_string());
         }
-        self.chips = faucet_amount;
+        self.add_chips(faucet_amount);
         Ok(())
     }
 
@@ -88,12 +88,12 @@ mod tests {
 
         assert!(player.can_top_up(threshold));
         assert!(player.top_up(100, threshold).is_ok());
-        assert_eq!(player.chips, 100);
+        assert_eq!(player.chips, 150);
 
         // Cannot top up when chips >= 100
         assert!(!player.can_top_up(threshold));
         assert!(player.top_up(100, threshold).is_err());
-        assert_eq!(player.chips, 100); // Unchanged
+        assert_eq!(player.chips, 150); // Unchanged
     }
 
     #[test]

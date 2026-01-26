@@ -34,7 +34,6 @@ impl Default for Config {
 }
 
 impl Config {
-    #[allow(dead_code)]
     pub fn from_env() -> Result<Self, String> {
         let config = Self {
             server_host: Self::get_env_string("POKER_SERVER_HOST", "127.0.0.1"),
