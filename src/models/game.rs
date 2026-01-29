@@ -55,6 +55,15 @@ pub struct ValidAction {
     pub max_raise: Option<i64>,
 }
 
+impl std::fmt::Display for ValidAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.action {
+            PlayerAction::Raise(amount) => write!(f, "Raise to {}", amount),
+            other => write!(f, "{:?}", other),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerGameState {
     pub player_id: i64,
@@ -122,7 +131,7 @@ pub struct GameState {
     pub side_pots: Vec<SidePot>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct SidePot {
     pub amount: i64,
     pub eligible_players: Vec<usize>,

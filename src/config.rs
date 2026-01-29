@@ -1,17 +1,29 @@
 use serde::{Deserialize, Serialize};
 
+/// Server configuration loaded from environment variables or defaults
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
+    /// Server listening address
     pub server_host: String,
+    /// Server listening port
     pub server_port: u16,
+    /// Database connection URL
     pub database_url: String,
+    /// Maximum number of concurrent tables
     pub max_tables: usize,
+    /// Grace period in seconds before auto-fold on disconnect
     pub disconnect_grace_period_secs: u64,
+    /// Small blind amount in chips
     pub small_blind: i64,
+    /// Big blind amount in chips
     pub big_blind: i64,
+    /// Minimum buy-in in big blinds
     pub min_buyin_bb: u32,
+    /// Maximum buy-in in big blinds
     pub max_buyin_bb: u32,
+    /// Amount to top-up when using the faucet
     pub faucet_amount: i64,
+    /// Starting chips for new players
     pub starting_chips: i64,
 }
 

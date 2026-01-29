@@ -7,8 +7,10 @@ use argon2::{
 use rand::rngs::OsRng;
 use sqlx::{sqlite::SqlitePool, Row};
 
+/// Database layer for persistent storage
 pub struct Database {
     pool: SqlitePool,
+    /// Starting chip amount for new players
     starting_chips: i64,
 }
 
