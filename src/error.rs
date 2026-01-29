@@ -26,6 +26,9 @@ pub enum PokerError {
 
     #[error("WebSocket error: {0}")]
     WebSocket(String),
+
+    #[error("Invalid player index: {0}")]
+    InvalidPlayerIndex(String),
 }
 
 pub type Result<T> = std::result::Result<T, PokerError>;

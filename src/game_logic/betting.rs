@@ -172,7 +172,11 @@ impl BettingRules {
         action: PlayerAction,
     ) -> Result<()> {
         if player_idx >= game.players.len() {
-            return Err(PokerError::Game("Invalid player index".to_string()));
+            return Err(PokerError::InvalidPlayerIndex(format!(
+                "Player index {} out of range (max {})",
+                player_idx,
+                game.players.len() - 1
+            )));
         }
 
         Self::validate_action(game, player_idx, &action)?;

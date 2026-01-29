@@ -96,61 +96,61 @@ impl Config {
     pub fn validate(&self) -> Result<(), crate::error::PokerError> {
         if self.server_port == 0 {
             return Err(crate::error::PokerError::Game(format!(
-                "Invalid POKER_SERVER_PORT ({}): must be > 0",
+                "Invalid POKER_SERVER_PORT: {}, expected range 1-65535",
                 self.server_port
             )));
         }
         if self.max_tables == 0 {
             return Err(crate::error::PokerError::Game(format!(
-                "Invalid POKER_MAX_TABLES ({}): must be > 0",
+                "Invalid POKER_MAX_TABLES: {}, must be at least 1",
                 self.max_tables
             )));
         }
         if self.small_blind <= 0 {
             return Err(crate::error::PokerError::Game(format!(
-                "Invalid POKER_SMALL_BLIND ({}): must be > 0",
+                "Invalid POKER_SMALL_BLIND: {}, must be a positive number",
                 self.small_blind
             )));
         }
         if self.big_blind <= 0 {
             return Err(crate::error::PokerError::Game(format!(
-                "Invalid POKER_BIG_BLIND ({}): must be > 0",
+                "Invalid POKER_BIG_BLIND: {}, must be a positive number",
                 self.big_blind
             )));
         }
         if self.big_blind < self.small_blind {
             return Err(crate::error::PokerError::Game(format!(
-                "Invalid blind configuration: POKER_BIG_BLIND ({}) must be >= POKER_SMALL_BLIND ({})",
-                self.big_blind, self.small_blind
+                "Invalid blind configuration: POKER_BIG_BLIND ({}) must be >= POKER_SMALL_BLIND ({}), got BB {} < SB {}",
+                self.big_blind, self.small_blind, self.big_blind, self.small_blind
             )));
         }
         if self.min_buyin_bb == 0 {
             return Err(crate::error::PokerError::Game(format!(
-                "Invalid POKER_MIN_BUYIN_BB ({}): must be > 0",
+                "Invalid POKER_MIN_BUYIN_BB: {}, must be at least 1 big blind",
                 self.min_buyin_bb
             )));
         }
         if self.max_buyin_bb < self.min_buyin_bb {
             return Err(crate::error::PokerError::Game(format!(
-                "Invalid buy-in configuration: POKER_MAX_BUYIN_BB ({}) must be >= POKER_MIN_BUYIN_BB ({})",
-                self.max_buyin_bb, self.min_buyin_bb
+                "Invalid buy-in configuration: POKER_MAX_BUYIN_BB ({}) must be >= POKER_MIN_BUYIN_BB ({}), got max {} < min {}",
+                self.max_buyin_bb, self.min_buyin_bb, self.max_buyin_bb, self.min_buyin_bb
             )));
         }
         if self.faucet_amount <= 0 {
             return Err(crate::error::PokerError::Game(format!(
-                "Invalid POKER_FAUCET_AMOUNT ({}): must be > 0",
+                "Invalid POKER_FAUCET_AMOUNT: {}, must be a positive number",
                 self.faucet_amount
             )));
         }
         if self.starting_chips <= 0 {
             return Err(crate::error::PokerError::Game(format!(
-                "Invalid POKER_STARTING_CHIPS ({}): must be > 0",
+                "Invalid POKER_STARTING_CHIPS: {}, must be a positive number",
                 self.starting_chips
             )));
         }
         if self.disconnect_grace_period_secs == 0 {
             return Err(crate::error::PokerError::Game(format!(
-                "Invalid POKER_DISCONNECT_GRACE_SECS ({}): must be > 0",
+                "Invalid POKER_DISCONNECT_GRACE_SECS: {}, must be at least 1 second",
                 self.disconnect_grace_period_secs
             )));
         }
@@ -160,9 +160,10 @@ impl Config {
             .checked_mul(self.max_buyin_bb as i64)
             .is_none()
         {
-            return Err(crate::error::PokerError::Game(
-                "Invalid configuration: max_buyin_bb would overflow i64".to_string(),
-            ));
+            return Err(crate::error::PokerError::Game(format!(
+                "Invalid configuration: POKER_BIG_BLIND ({}) * POKER_MAX_BUYIN_BB ({}) would overflow i64, please reduce one or both values",
+                self.big_blind, self.max_buyin_bb
+            )));
         }
 
         Ok(())

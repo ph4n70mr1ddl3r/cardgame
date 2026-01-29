@@ -128,8 +128,14 @@ pub struct SidePot {
     pub eligible_players: Vec<usize>,
 }
 
-// TODO: Implement side pot calculation and distribution logic
+// TODO: Implement side pot calculation and distribution logic (Phase 4)
 // Side pots are needed when players go all-in with different amounts
+// Implementation requirements:
+// - Calculate side pots when a player is all-in but others continue betting
+// - Track which players are eligible for each side pot
+// - Distribute side pots at showdown based on hand rankings
+// - Handle multiple side pots in a single hand
+// Reference: https://en.wikipedia.org/wiki/Split_pot
 
 impl GameState {
     pub fn new(table_id: i64, small_blind: i64, big_blind: i64) -> Self {
