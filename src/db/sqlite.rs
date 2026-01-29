@@ -203,12 +203,13 @@ impl Database {
     /// - Resulting balance would be negative
     /// - Database query fails
     pub async fn update_player_chips(&self, player_id: i64, delta: i64) -> Result<()> {
-        let result = sqlx::query("UPDATE players SET chips = chips + ? WHERE id = ? AND chips + ? >= 0")
-            .bind(delta)
-            .bind(player_id)
-            .bind(delta)
-            .execute(&self.pool)
-            .await?;
+        let result =
+            sqlx::query("UPDATE players SET chips = chips + ? WHERE id = ? AND chips + ? >= 0")
+                .bind(delta)
+                .bind(player_id)
+                .bind(delta)
+                .execute(&self.pool)
+                .await?;
 
         if result.rows_affected() == 0 {
             return Err(crate::error::PokerError::Game(

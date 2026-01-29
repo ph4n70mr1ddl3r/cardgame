@@ -48,7 +48,7 @@ pub enum PlayerAction {
     AllIn,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ValidAction {
     pub action: PlayerAction,
     pub min_raise: Option<i64>,
