@@ -17,7 +17,11 @@ pub struct Database {
 }
 
 impl Database {
-    pub async fn new(database_url: &str, starting_chips: i64, max_connections: u32) -> Result<Self> {
+    pub async fn new(
+        database_url: &str,
+        starting_chips: i64,
+        max_connections: u32,
+    ) -> Result<Self> {
         let pool = sqlx::sqlite::SqlitePoolOptions::new()
             .max_connections(max_connections)
             .connect(database_url)

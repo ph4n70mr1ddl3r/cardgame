@@ -52,8 +52,15 @@ impl Player {
                 "Insufficient chips".to_string(),
             ));
         }
-        self.chips -= amount;
-        Ok(())
+        match self.chips.checked_sub(amount) {
+            Some(new_chips) => {
+                self.chips = new_chips;
+                Ok(())
+            }
+            None => Err(crate::error::PokerError::Game(
+                "Insufficient chips".to_string(),
+            )),
+        }
     }
 
     pub fn add_chips(&mut self, amount: i64) -> Result<(), crate::error::PokerError> {

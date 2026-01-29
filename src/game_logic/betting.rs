@@ -46,9 +46,10 @@ impl BettingRules {
 
     fn validate_check(game: &GameState, player: &PlayerGameState) -> Result<()> {
         if player.bet_this_round < game.current_bet {
-            return Err(PokerError::InvalidAction(
-                "Cannot check when facing a bet".to_string(),
-            ));
+            return Err(PokerError::InvalidAction(format!(
+                "Cannot check when facing a bet of {} (have bet {})",
+                game.current_bet, player.bet_this_round
+            )));
         }
         Ok(())
     }
@@ -62,9 +63,10 @@ impl BettingRules {
 
         let call_amount = game.current_bet - player.bet_this_round;
         if call_amount > player.chips {
-            return Err(PokerError::InvalidAction(
-                "Insufficient chips to call (go all-in instead)".to_string(),
-            ));
+            return Err(PokerError::InvalidAction(format!(
+                "Insufficient chips to call {} (have {})",
+                call_amount, player.chips
+            )));
         }
 
         Ok(())
@@ -78,9 +80,10 @@ impl BettingRules {
         }
 
         if raise_to <= game.current_bet {
-            return Err(PokerError::InvalidAction(
-                "Raise amount must be greater than current bet".to_string(),
-            ));
+            return Err(PokerError::InvalidAction(format!(
+                "Raise amount {} must be greater than current bet {}",
+                raise_to, game.current_bet
+            )));
         }
 
         let total_needed = raise_to
@@ -91,15 +94,16 @@ impl BettingRules {
 
         if raise_to < min_raise && total_needed < player.chips {
             return Err(PokerError::InvalidAction(format!(
-                "Minimum raise is {}",
-                min_raise
+                "Minimum raise is {} (attempted {})",
+                min_raise, raise_to
             )));
         }
 
         if total_needed > player.chips {
-            return Err(PokerError::InvalidAction(
-                "Insufficient chips for this raise (go all-in instead)".to_string(),
-            ));
+            return Err(PokerError::InvalidAction(format!(
+                "Insufficient chips for this raise (need {}, have {})",
+                total_needed, player.chips
+            )));
         }
 
         Ok(())
@@ -108,7 +112,7 @@ impl BettingRules {
     fn validate_all_in(_game: &GameState, player: &PlayerGameState) -> Result<()> {
         if player.chips == 0 {
             return Err(PokerError::InvalidAction(
-                "No chips to go all-in with".to_string(),
+                "Cannot go all-in when already at 0 chips".to_string(),
             ));
         }
         Ok(())
