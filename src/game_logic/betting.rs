@@ -133,15 +133,9 @@ impl BettingRules {
     ///
     /// Returns an error if the calculation would overflow i64
     fn calculate_min_raise(game: &GameState) -> Result<i64> {
-        if game.current_bet == game.big_blind {
-            game.current_bet
-                .checked_add(game.big_blind)
-                .ok_or_else(|| PokerError::Game("Overflow in min raise calculation".to_string()))
-        } else {
-            game.current_bet
-                .checked_mul(2)
-                .ok_or_else(|| PokerError::Game("Overflow in min raise calculation".to_string()))
-        }
+        game.current_bet
+            .checked_add(game.last_raise_amount)
+            .ok_or_else(|| PokerError::Game("Overflow in min raise calculation".to_string()))
     }
 
     /// Applies a validated action to the game state, updating chips, pot, and player status.
@@ -228,6 +222,7 @@ impl BettingRules {
                     .pot
                     .checked_add(amount_to_add)
                     .ok_or_else(|| PokerError::Game("Overflow in pot".to_string()))?;
+                game.last_raise_amount = raise_to - game.current_bet;
                 game.current_bet = raise_to;
 
                 if player.chips == 0 {
@@ -478,5 +473,37 @@ mod tests {
         assert!(actions
             .iter()
             .any(|a| matches!(a.action, PlayerAction::AllIn)));
+    }
+
+    #[test]
+    fn test_min_raise_calculation() {
+        let mut game = GameState::new(1, 50, 100);
+        game.add_player(1, "player1".to_string(), 10000).unwrap();
+        game.add_player(2, "player2".to_string(), 10000).unwrap();
+        Dealer::start_new_hand(&mut game).unwrap();
+
+        let min_raise = BettingRules::calculate_min_raise(&game).unwrap();
+        assert_eq!(min_raise, 200);
+
+        BettingRules::apply_action(&mut game, 0, PlayerAction::Raise(200)).unwrap();
+
+        let min_raise = BettingRules::calculate_min_raise(&game).unwrap();
+        assert_eq!(min_raise, 300);
+    }
+
+    #[test]
+    fn test_last_raise_amount_tracking() {
+        let mut game = GameState::new(1, 50, 100);
+        game.add_player(1, "player1".to_string(), 10000).unwrap();
+        game.add_player(2, "player2".to_string(), 10000).unwrap();
+        Dealer::start_new_hand(&mut game).unwrap();
+
+        assert_eq!(game.last_raise_amount, 100);
+
+        BettingRules::apply_action(&mut game, 0, PlayerAction::Raise(200)).unwrap();
+        assert_eq!(game.last_raise_amount, 100);
+
+        BettingRules::apply_action(&mut game, 1, PlayerAction::Raise(400)).unwrap();
+        assert_eq!(game.last_raise_amount, 200);
     }
 }

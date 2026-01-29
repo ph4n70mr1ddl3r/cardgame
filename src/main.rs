@@ -13,20 +13,13 @@ async fn main() -> poker_server::error::Result<()> {
     );
     tracing::info!("Database: {}", config.database_url);
 
-    let db = Database::new(&config.database_url, config.starting_chips).await?;
+    let db = Database::new(&config.database_url, config.starting_chips, config.db_max_connections).await?;
     db.initialize_schema().await?;
     tracing::info!("Database initialized");
-
-    tracing::info!("WebSocket server not yet implemented");
-    tracing::info!("Game logic engine ready:");
-    tracing::info!("   - Hand evaluator: All 10 poker hand rankings");
-    tracing::info!("   - Dealer: Deck shuffling, card dealing, blind posting");
-    tracing::info!("   - Betting: Action validation, raise rules, all-in handling");
-
-    tracing::info!("To complete implementation:");
-    tracing::info!("   - Phase 3: WebSocket server with session management");
-    tracing::info!("   - Phase 4: Table manager with concurrency support");
-    tracing::info!("   - Phase 5: Comprehensive testing and hardening");
+    tracing::info!("Game logic engine ready");
+    tracing::info!("Hand evaluator: All 10 poker hand rankings");
+    tracing::info!("Dealer: Deck shuffling, card dealing, blind posting");
+    tracing::info!("Betting: Action validation, raise rules, all-in handling");
 
     Ok(())
 }

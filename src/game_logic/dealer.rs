@@ -13,6 +13,7 @@ impl Dealer {
         game.community_cards.clear();
         game.pot = 0;
         game.current_bet = 0;
+        game.last_raise_amount = game.big_blind;
         game.stage = GameStage::PreFlop;
         game.side_pots.clear();
 
@@ -93,6 +94,7 @@ impl Dealer {
     ) -> Result<()> {
         game.stage = stage;
         game.current_bet = 0;
+        game.last_raise_amount = game.big_blind;
 
         // Burn one card: In poker, the top card of the deck is discarded ("burned")
         // before dealing community cards to prevent marking or card counting.

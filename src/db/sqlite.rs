@@ -12,15 +12,25 @@ pub struct Database {
     pool: SqlitePool,
     /// Starting chip amount for new players
     starting_chips: i64,
+    /// Maximum number of connections in the pool
+    max_connections: u32,
 }
 
 impl Database {
-    pub async fn new(database_url: &str, starting_chips: i64) -> Result<Self> {
-        let pool = SqlitePool::connect(database_url).await?;
+    pub async fn new(database_url: &str, starting_chips: i64, max_connections: u32) -> Result<Self> {
+        let pool = sqlx::sqlite::SqlitePoolOptions::new()
+            .max_connections(max_connections)
+            .connect(database_url)
+            .await?;
         Ok(Self {
             pool,
             starting_chips,
+            max_connections,
         })
+    }
+
+    pub fn max_connections(&self) -> u32 {
+        self.max_connections
     }
 
     pub async fn initialize_schema(&self) -> Result<()> {
@@ -42,6 +52,14 @@ impl Database {
         .await?;
 
         sqlx::query("CREATE INDEX IF NOT EXISTS idx_players_username ON players(username)")
+            .execute(&self.pool)
+            .await?;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_players_chips ON players(chips)")
+            .execute(&self.pool)
+            .await?;
+
+        sqlx::query("CREATE INDEX IF NOT EXISTS idx_players_created_at ON players(created_at)")
             .execute(&self.pool)
             .await?;
 
@@ -299,7 +317,7 @@ mod tests {
     use super::*;
 
     async fn setup_test_db() -> Database {
-        let db = Database::new("sqlite::memory:", 100).await.unwrap();
+        let db = Database::new("sqlite::memory:", 100, 5).await.unwrap();
         db.initialize_schema().await.unwrap();
         db
     }
@@ -364,5 +382,14 @@ mod tests {
 
         let result = db.create_player("", "Password123").await;
         assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn test_db_connection_pool_config() {
+        let db = Database::new("sqlite::memory:", 100, 5).await.unwrap();
+        db.initialize_schema().await.unwrap();
+        let player_id = db.create_player("pooluser", "Password123").await.unwrap();
+        let player = db.get_player_by_id(player_id).await.unwrap();
+        assert!(player.is_some());
     }
 }

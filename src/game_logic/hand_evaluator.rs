@@ -297,21 +297,11 @@ fn combine_indices_helper(
 ///
 /// * `&'static str` - The rank name as a string slice
 fn rank_name(rank: Rank) -> &'static str {
-    match rank {
-        Rank::Two => "Two",
-        Rank::Three => "Three",
-        Rank::Four => "Four",
-        Rank::Five => "Five",
-        Rank::Six => "Six",
-        Rank::Seven => "Seven",
-        Rank::Eight => "Eight",
-        Rank::Nine => "Nine",
-        Rank::Ten => "Ten",
-        Rank::Jack => "Jack",
-        Rank::Queen => "Queen",
-        Rank::King => "King",
-        Rank::Ace => "Ace",
-    }
+    const RANK_NAMES: [&str; 13] = [
+        "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Jack", "Queen",
+        "King", "Ace",
+    ];
+    RANK_NAMES[rank as usize - 2]
 }
 
 #[cfg(test)]
@@ -526,5 +516,22 @@ mod tests {
         let straight_hand = evaluate_hand(straight_cards).unwrap();
 
         assert!(flush_hand > straight_hand);
+    }
+
+    #[test]
+    fn test_rank_name_all_ranks() {
+        assert_eq!(rank_name(Rank::Two), "Two");
+        assert_eq!(rank_name(Rank::Three), "Three");
+        assert_eq!(rank_name(Rank::Four), "Four");
+        assert_eq!(rank_name(Rank::Five), "Five");
+        assert_eq!(rank_name(Rank::Six), "Six");
+        assert_eq!(rank_name(Rank::Seven), "Seven");
+        assert_eq!(rank_name(Rank::Eight), "Eight");
+        assert_eq!(rank_name(Rank::Nine), "Nine");
+        assert_eq!(rank_name(Rank::Ten), "Ten");
+        assert_eq!(rank_name(Rank::Jack), "Jack");
+        assert_eq!(rank_name(Rank::Queen), "Queen");
+        assert_eq!(rank_name(Rank::King), "King");
+        assert_eq!(rank_name(Rank::Ace), "Ace");
     }
 }

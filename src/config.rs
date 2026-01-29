@@ -25,6 +25,10 @@ pub struct Config {
     pub faucet_amount: i64,
     /// Starting chips for new players
     pub starting_chips: i64,
+    /// Maximum database connections in pool
+    pub db_max_connections: u32,
+    /// Database connection timeout in seconds
+    pub db_timeout_secs: u64,
 }
 
 impl Default for Config {
@@ -41,6 +45,8 @@ impl Default for Config {
             max_buyin_bb: 100,
             faucet_amount: 100,
             starting_chips: 100,
+            db_max_connections: 10,
+            db_timeout_secs: 30,
         }
     }
 }
@@ -64,6 +70,8 @@ impl Config {
             max_buyin_bb: Self::get_env("POKER_MAX_BUYIN_BB", 100, Some(1), Some(1000)),
             faucet_amount: Self::get_env("POKER_FAUCET_AMOUNT", 100, Some(1), Some(100000)),
             starting_chips: Self::get_env("POKER_STARTING_CHIPS", 100, Some(1), Some(100000)),
+            db_max_connections: Self::get_env("POKER_DB_MAX_CONNECTIONS", 10, Some(1), Some(100)),
+            db_timeout_secs: Self::get_env("POKER_DB_TIMEOUT_SECS", 30, Some(1), Some(300)),
         };
         config.validate()?;
         Ok(config)
@@ -164,6 +172,18 @@ impl Config {
             return Err(crate::error::PokerError::Game(format!(
                 "Invalid POKER_DISCONNECT_GRACE_SECS: {}, must be at least 1 second",
                 self.disconnect_grace_period_secs
+            )));
+        }
+        if self.db_max_connections == 0 {
+            return Err(crate::error::PokerError::Game(format!(
+                "Invalid POKER_DB_MAX_CONNECTIONS: {}, must be at least 1",
+                self.db_max_connections
+            )));
+        }
+        if self.db_timeout_secs == 0 {
+            return Err(crate::error::PokerError::Game(format!(
+                "Invalid POKER_DB_TIMEOUT_SECS: {}, must be at least 1 second",
+                self.db_timeout_secs
             )));
         }
 
