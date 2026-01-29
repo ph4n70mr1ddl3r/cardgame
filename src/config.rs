@@ -68,8 +68,8 @@ impl Config {
             big_blind: Self::get_env("POKER_BIG_BLIND", 100, Some(1), Some(10000)),
             min_buyin_bb: Self::get_env("POKER_MIN_BUYIN_BB", 20, Some(1), Some(1000)),
             max_buyin_bb: Self::get_env("POKER_MAX_BUYIN_BB", 100, Some(1), Some(1000)),
-            faucet_amount: Self::get_env("POKER_FAUCET_AMOUNT", 100, Some(1), Some(100000)),
-            starting_chips: Self::get_env("POKER_STARTING_CHIPS", 100, Some(1), Some(100000)),
+            faucet_amount: Self::get_env("POKER_FAUCET_AMOUNT", 100, Some(1), Some(100_000)),
+            starting_chips: Self::get_env("POKER_STARTING_CHIPS", 100, Some(1), Some(100_000)),
             db_max_connections: Self::get_env("POKER_DB_MAX_CONNECTIONS", 10, Some(1), Some(100)),
             db_timeout_secs: Self::get_env("POKER_DB_TIMEOUT_SECS", 30, Some(1), Some(300)),
         };
@@ -93,8 +93,7 @@ impl Config {
                 if let Some(min_val) = min {
                     if value < min_val {
                         eprintln!(
-                            "Warning: {} value {} is below minimum {}, using default {}",
-                            key, value, min_val, default
+                            "Warning: {key} value {value} is below minimum {min_val}, using default {default}"
                         );
                         return None;
                     }
@@ -102,8 +101,7 @@ impl Config {
                 if let Some(max_val) = max {
                     if value > max_val {
                         eprintln!(
-                            "Warning: {} value {} exceeds maximum {}, using default {}",
-                            key, value, max_val, default
+                            "Warning: {key} value {value} exceeds maximum {max_val}, using default {default}"
                         );
                         return None;
                     }
@@ -189,7 +187,7 @@ impl Config {
 
         if self
             .big_blind
-            .checked_mul(self.max_buyin_bb as i64)
+            .checked_mul(i64::from(self.max_buyin_bb))
             .is_none()
         {
             return Err(crate::error::PokerError::Game(format!(

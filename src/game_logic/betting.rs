@@ -94,15 +94,14 @@ impl BettingRules {
 
         if raise_to < min_raise && total_needed < player.chips {
             return Err(PokerError::InvalidAction(format!(
-                "Minimum raise is {} (attempted {})",
-                min_raise, raise_to
+                "Minimum raise is {min_raise} (attempted {raise_to})"
             )));
         }
 
-        if total_needed > player.chips {
+        let player_chips = player.chips;
+        if total_needed > player_chips {
             return Err(PokerError::InvalidAction(format!(
-                "Insufficient chips for this raise (need {}, have {})",
-                total_needed, player.chips
+                "Insufficient chips for this raise (need {total_needed}, have {player_chips})"
             )));
         }
 

@@ -38,7 +38,6 @@ impl Database {
     }
 
     pub async fn initialize_schema(&self) -> Result<()> {
-        // Create players table
         sqlx::query(
             r#"
             CREATE TABLE IF NOT EXISTS players (
@@ -131,12 +130,7 @@ impl Database {
                 "Username can only contain letters, numbers, and underscores".to_string(),
             ));
         }
-        if !username
-            .chars()
-            .next()
-            .map(|c| c.is_alphabetic())
-            .unwrap_or(false)
-        {
+        if !username.chars().next().is_some_and(char::is_alphabetic) {
             return Err(crate::error::PokerError::Game(
                 "Username must start with a letter".to_string(),
             ));
@@ -158,7 +152,7 @@ impl Database {
                 "Password must contain at least one uppercase letter, one lowercase letter, and one digit".to_string(),
             ));
         }
-        let password_hash = self.hash_password(password)?;
+        let password_hash = Self::hash_password(password)?;
 
         let result =
             sqlx::query("INSERT INTO players (username, password_hash, chips) VALUES (?, ?, ?)")
@@ -284,13 +278,12 @@ impl Database {
     ///
     /// Returns error if database query fails or password hash is corrupted
     pub async fn verify_password(&self, username: &str, password: &str) -> Result<Option<Player>> {
-        let player = match self.get_player_by_username(username).await? {
-            Some(p) => p,
-            None => return Ok(None),
+        let Some(player) = self.get_player_by_username(username).await? else {
+            return Ok(None);
         };
 
         let parsed_hash = PasswordHash::new(&player.password_hash).map_err(|e| {
-            crate::error::PokerError::Auth(format!("Invalid password hash format: {}", e))
+            crate::error::PokerError::Auth(format!("Invalid password hash format: {e}"))
         })?;
 
         let is_valid = Argon2::default()
@@ -305,7 +298,7 @@ impl Database {
     }
 
     // Helper functions
-    fn hash_password(&self, password: &str) -> Result<String> {
+    fn hash_password(password: &str) -> Result<String> {
         let salt = SaltString::generate(&mut OsRng);
         let argon2 = Argon2::default();
         let hash = argon2

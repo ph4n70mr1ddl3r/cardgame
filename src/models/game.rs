@@ -58,8 +58,8 @@ pub struct ValidAction {
 impl std::fmt::Display for ValidAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.action {
-            PlayerAction::Raise(amount) => write!(f, "Raise to {}", amount),
-            other => write!(f, "{:?}", other),
+            PlayerAction::Raise(amount) => write!(f, "Raise to {amount}"),
+            other => write!(f, "{other:?}"),
         }
     }
 }
@@ -81,6 +81,7 @@ pub struct PlayerGameState {
 }
 
 impl PlayerGameState {
+    #[must_use]
     pub fn new(player_id: i64, username: String, chips: i64, is_dealer: bool) -> Self {
         Self {
             player_id,
@@ -148,6 +149,7 @@ pub struct SidePot {
 // Reference: https://en.wikipedia.org/wiki/Split_pot
 
 impl GameState {
+    #[must_use]
     pub fn new(table_id: i64, small_blind: i64, big_blind: i64) -> Self {
         Self {
             table_id,
@@ -183,6 +185,7 @@ impl GameState {
         Ok(())
     }
 
+    #[must_use]
     pub fn is_ready_to_start(&self) -> bool {
         self.players.len() == MAX_PLAYERS && self.stage == GameStage::WaitingForPlayers
     }

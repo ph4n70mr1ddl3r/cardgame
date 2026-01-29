@@ -50,10 +50,11 @@ impl Table {
         })
     }
 
+    #[must_use]
     pub fn is_full(&self) -> bool {
         self.current_players >= self.max_players as usize
     }
-
+    #[must_use]
     pub fn can_join(&self) -> bool {
         !self.is_full()
     }
@@ -62,18 +63,16 @@ impl Table {
         if buyin < 0 {
             return Err(PokerError::Game("Buy-in cannot be negative".to_string()));
         }
-        let min_buyin = self.big_blind * min_buyin_bb as i64;
-        let max_buyin = self.big_blind * max_buyin_bb as i64;
+        let min_buyin = self.big_blind * i64::from(min_buyin_bb);
+        let max_buyin = self.big_blind * i64::from(max_buyin_bb);
         if buyin < min_buyin {
             return Err(PokerError::Game(format!(
-                "Buy-in must be at least {} big blinds",
-                min_buyin_bb
+                "Buy-in must be at least {min_buyin_bb} big blinds"
             )));
         }
         if buyin > max_buyin {
             return Err(PokerError::Game(format!(
-                "Buy-in cannot exceed {} big blinds",
-                max_buyin_bb
+                "Buy-in cannot exceed {max_buyin_bb} big blinds"
             )));
         }
         Ok(())

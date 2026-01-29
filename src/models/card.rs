@@ -35,6 +35,7 @@ pub struct Card {
 }
 
 impl Card {
+    #[must_use]
     pub fn new(suit: Suit, rank: Rank) -> Self {
         Self { suit, rank }
     }
@@ -63,7 +64,7 @@ impl fmt::Display for Card {
             Suit::Clubs => "♣",
             Suit::Spades => "♠",
         };
-        write!(f, "{}{}", rank_str, suit_str)
+        write!(f, "{rank_str}{suit_str}")
     }
 }
 
@@ -73,6 +74,7 @@ pub struct Deck {
 }
 
 impl Deck {
+    #[must_use]
     pub fn new() -> Self {
         let mut deck = Self {
             cards: Vec::with_capacity(52),
@@ -110,6 +112,7 @@ impl Deck {
         self.cards.pop()
     }
 
+    #[must_use]
     pub fn remaining(&self) -> usize {
         self.cards.len()
     }

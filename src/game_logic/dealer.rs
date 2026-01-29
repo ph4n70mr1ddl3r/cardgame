@@ -26,8 +26,7 @@ impl Dealer {
         // Post blinds
         Self::post_blinds(game)?;
 
-        // Deal hole cards (2 cards to each player)
-        Self::deal_hole_cards(game)?;
+        Self::deal_hole_cards(game);
 
         // Set current player (small blind acts first preflop in heads-up)
         game.current_player_index = Some((game.dealer_index + 1) % game.players.len());
@@ -76,7 +75,7 @@ impl Dealer {
         Ok(())
     }
 
-    fn deal_hole_cards(game: &mut GameState) -> Result<()> {
+    fn deal_hole_cards(game: &mut GameState) {
         for _ in 0..crate::models::game::HOLE_CARDS {
             for player in &mut game.players {
                 if let Some(card) = game.deck.deal() {
@@ -84,14 +83,9 @@ impl Dealer {
                 }
             }
         }
-        Ok(())
     }
 
-    fn deal_community_cards(
-        game: &mut GameState,
-        stage: GameStage,
-        num_cards: usize,
-    ) -> Result<()> {
+    fn deal_community_cards(game: &mut GameState, stage: GameStage, num_cards: usize) {
         game.stage = stage;
         game.current_bet = 0;
         game.last_raise_amount = game.big_blind;
@@ -117,20 +111,21 @@ impl Dealer {
 
         // Set current player to small blind (non-dealer in heads-up)
         game.current_player_index = Some((game.dealer_index + 1) % game.players.len());
-
-        Ok(())
     }
 
     pub fn deal_flop(game: &mut GameState) -> Result<()> {
-        Self::deal_community_cards(game, GameStage::Flop, 3)
+        Self::deal_community_cards(game, GameStage::Flop, 3);
+        Ok(())
     }
 
     pub fn deal_turn(game: &mut GameState) -> Result<()> {
-        Self::deal_community_cards(game, GameStage::Turn, 1)
+        Self::deal_community_cards(game, GameStage::Turn, 1);
+        Ok(())
     }
 
     pub fn deal_river(game: &mut GameState) -> Result<()> {
-        Self::deal_community_cards(game, GameStage::River, 1)
+        Self::deal_community_cards(game, GameStage::River, 1);
+        Ok(())
     }
 
     pub fn advance_to_showdown(game: &mut GameState) {

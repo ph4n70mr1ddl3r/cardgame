@@ -12,6 +12,7 @@ pub struct Player {
 }
 
 impl Player {
+    #[must_use]
     pub fn new(id: i64, username: String, password_hash: String, starting_chips: i64) -> Self {
         Self {
             id,
@@ -23,6 +24,7 @@ impl Player {
         }
     }
 
+    #[must_use]
     pub fn can_top_up(&self, threshold: i64) -> bool {
         self.chips < threshold
     }
