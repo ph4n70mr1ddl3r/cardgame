@@ -183,6 +183,25 @@ impl Database {
         }))
     }
 
+    /// Updates a player's chip balance by adding delta (can be negative).
+    ///
+    /// Uses database-level CHECK constraint to prevent negative chip balance.
+    ///
+    /// # Arguments
+    ///
+    /// * `player_id` - ID of player to update
+    /// * `delta` - Amount to add (positive) or subtract (negative)
+    ///
+    /// # Returns
+    ///
+    /// * `Result<()>` - Ok if update successful
+    ///
+    /// # Errors
+    ///
+    /// Returns error if:
+    /// - Player not found
+    /// - Resulting balance would be negative
+    /// - Database query fails
     pub async fn update_player_chips(&self, player_id: i64, delta: i64) -> Result<()> {
         let result = sqlx::query("UPDATE players SET chips = chips + ? WHERE id = ? AND chips + ? >= 0")
             .bind(delta)
@@ -222,6 +241,23 @@ impl Database {
         Ok(())
     }
 
+    /// Verifies a player's password by comparing against stored hash.
+    ///
+    /// Uses Argon2 to verify the password hash. Returns the player if valid,
+    /// None if password is incorrect or player doesn't exist.
+    ///
+    /// # Arguments
+    ///
+    /// * `username` - Username to look up
+    /// * `password` - Plain text password to verify
+    ///
+    /// # Returns
+    ///
+    /// * `Result<Option<Player>>` - Some(Player) if password valid, None if invalid or player not found
+    ///
+    /// # Errors
+    ///
+    /// Returns error if database query fails or password hash is corrupted
     pub async fn verify_password(&self, username: &str, password: &str) -> Result<Option<Player>> {
         let player = match self.get_player_by_username(username).await? {
             Some(p) => p,

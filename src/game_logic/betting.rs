@@ -87,15 +87,7 @@ impl BettingRules {
             .checked_sub(player.bet_this_round)
             .ok_or_else(|| PokerError::InvalidAction("Invalid raise calculation".to_string()))?;
 
-        let min_raise = if game.current_bet == game.big_blind {
-            game.current_bet
-                .checked_add(game.big_blind)
-                .ok_or_else(|| PokerError::Game("Overflow in min raise calculation".to_string()))?
-        } else {
-            game.current_bet
-                .checked_mul(2)
-                .ok_or_else(|| PokerError::Game("Overflow in min raise calculation".to_string()))?
-        };
+        let min_raise = Self::calculate_min_raise(game)?;
 
         if raise_to < min_raise && total_needed < player.chips {
             return Err(PokerError::InvalidAction(format!(
@@ -120,6 +112,36 @@ impl BettingRules {
             ));
         }
         Ok(())
+    }
+
+    /// Calculates the minimum legal raise amount based on the current game state.
+    ///
+    /// # Rules
+    ///
+    /// - If the current bet equals the big blind (first raise opportunity), minimum raise is current bet + big blind
+    /// - Otherwise, minimum raise is double the current bet (standard raise rule)
+    ///
+    /// # Arguments
+    ///
+    /// * `game` - Current game state containing current bet and blind amounts
+    ///
+    /// # Returns
+    ///
+    /// * `Result<i64>` - The minimum legal raise amount
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the calculation would overflow i64
+    fn calculate_min_raise(game: &GameState) -> Result<i64> {
+        if game.current_bet == game.big_blind {
+            game.current_bet
+                .checked_add(game.big_blind)
+                .ok_or_else(|| PokerError::Game("Overflow in min raise calculation".to_string()))
+        } else {
+            game.current_bet
+                .checked_mul(2)
+                .ok_or_else(|| PokerError::Game("Overflow in min raise calculation".to_string()))
+        }
     }
 
     /// Applies a validated action to the game state, updating chips, pot, and player status.
@@ -303,17 +325,7 @@ impl BettingRules {
 
         // Can always raise if have chips
         if player.chips > 0 {
-            let min_raise = if game.current_bet == game.big_blind {
-                game.current_bet
-                    .checked_add(game.big_blind)
-                    .ok_or_else(|| {
-                        PokerError::Game("Overflow in minimum raise calculation".to_string())
-                    })?
-            } else {
-                game.current_bet.checked_mul(2).ok_or_else(|| {
-                    PokerError::Game("Overflow in minimum raise calculation".to_string())
-                })?
-            };
+            let min_raise = Self::calculate_min_raise(game)?;
             let max_raise = player
                 .chips
                 .checked_add(player.bet_this_round)
