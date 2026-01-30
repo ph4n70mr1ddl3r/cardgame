@@ -146,15 +146,19 @@ pub struct SidePot {
     pub eligible_players: Vec<usize>,
 }
 
-// TODO: Implement side pot calculation and distribution logic (Phase 4)
-// Side pots are needed when players go all-in with different amounts
-// Implementation requirements:
-// - Calculate side pots when a player is all-in but others continue betting
-// - Track which players are eligible for each side pot
-// - Distribute side pots at showdown based on hand rankings
-// - Handle multiple side pots in a single hand
-// Reference: https://en.wikipedia.org/wiki/Split_pot
-
+/// Side pot calculation and distribution logic.
+///
+/// This functionality is planned for Phase 4 implementation. Side pots are needed when
+/// players go all-in with different amounts.
+///
+/// # Implementation Requirements
+/// - Calculate side pots when a player is all-in but others continue betting
+/// - Track which players are eligible for each side pot
+/// - Distribute side pots at showdown based on hand rankings
+/// - Handle multiple side pots in a single hand
+///
+/// # Reference
+/// See [Split pot](https://en.wikipedia.org/wiki/Split_pot) for more details
 impl GameState {
     /// Creates a new game state for a poker table.
     ///
