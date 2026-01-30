@@ -199,6 +199,7 @@ impl Config {
     /// Validates configuration values for consistency and correctness.
     ///
     /// This method checks for:
+    /// - Host validity (non-empty)
     /// - Port validity (must be non-zero)
     /// - Positive values for chip amounts
     /// - Blind relationship (big blind >= small blind)
@@ -210,6 +211,9 @@ impl Config {
     ///
     /// Returns a `ConfigError` if any validation fails
     pub fn validate(&self) -> std::result::Result<(), ConfigError> {
+        if self.server_host.is_empty() || self.server_host.trim().is_empty() {
+            return Err(ConfigError::validation("POKER_SERVER_HOST cannot be empty"));
+        }
         if self.server_port == 0 {
             return Err(ConfigError::validation(
                 "POKER_SERVER_PORT must be in range 1-65535",
@@ -427,6 +431,24 @@ mod tests {
     fn test_zero_db_timeout() {
         let config = Config {
             db_timeout_secs: 0,
+            ..Default::default()
+        };
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_empty_server_host() {
+        let config = Config {
+            server_host: "".to_string(),
+            ..Default::default()
+        };
+        assert!(config.validate().is_err());
+    }
+
+    #[test]
+    fn test_whitespace_server_host() {
+        let config = Config {
+            server_host: "   ".to_string(),
             ..Default::default()
         };
         assert!(config.validate().is_err());

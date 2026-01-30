@@ -13,6 +13,8 @@ pub struct Database {
     pool: SqlitePool,
     starting_chips: i64,
     max_connections: u32,
+    #[allow(dead_code)]
+    _timeout_secs: u64,
 }
 
 impl Database {
@@ -23,14 +25,16 @@ impl Database {
     /// * `database_url` - SQLite database connection string
     /// * `starting_chips` - Initial chips for new players
     /// * `max_connections` - Maximum pool size
+    /// * `timeout_secs` - Connection timeout in seconds
     pub async fn new(
         database_url: &str,
         starting_chips: i64,
         max_connections: u32,
+        timeout_secs: u64,
     ) -> Result<Self> {
         let pool = sqlx::sqlite::SqlitePoolOptions::new()
             .max_connections(max_connections)
-            .acquire_timeout(std::time::Duration::from_secs(30))
+            .acquire_timeout(std::time::Duration::from_secs(timeout_secs))
             .connect(database_url)
             .await
             .map_err(|e| {
@@ -40,6 +44,7 @@ impl Database {
             pool,
             starting_chips,
             max_connections,
+            _timeout_secs: timeout_secs,
         })
     }
 
@@ -487,7 +492,7 @@ mod tests {
     use super::*;
 
     async fn setup_test_db() -> Database {
-        let db = Database::new("sqlite::memory:", 100, 5).await.unwrap();
+        let db = Database::new("sqlite::memory:", 100, 5, 30).await.unwrap();
         db.initialize_schema().await.unwrap();
         db
     }
@@ -556,7 +561,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_db_connection_pool_config() {
-        let db = Database::new("sqlite::memory:", 100, 5).await.unwrap();
+        let db = Database::new("sqlite::memory:", 100, 5, 30).await.unwrap();
         db.initialize_schema().await.unwrap();
         let player_id = db.create_player("pooluser", "Password123").await.unwrap();
         let player = db.get_player_by_id(player_id).await.unwrap();

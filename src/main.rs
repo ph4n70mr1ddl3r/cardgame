@@ -17,6 +17,7 @@ async fn main() -> poker_server::error::Result<()> {
         &config.database_url,
         config.starting_chips,
         config.db_max_connections,
+        config.db_timeout_secs,
     )
     .await?;
     db.initialize_schema().await?;
