@@ -233,6 +233,14 @@ mod tests {
     }
 
     #[test]
+    fn test_add_too_many_players() {
+        let mut game = GameState::new(1, 50, 100);
+        game.add_player(1, "player1".to_string(), 100).unwrap();
+        game.add_player(2, "player2".to_string(), 100).unwrap();
+        assert!(game.add_player(3, "player3".to_string(), 100).is_err());
+    }
+
+    #[test]
     fn test_player_game_state_reset() {
         let mut player = PlayerGameState::new(1, "test".to_string(), 100, true);
         player.total_bet = 50;

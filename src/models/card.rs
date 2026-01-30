@@ -158,4 +158,22 @@ mod tests {
         assert!(Rank::King > Rank::Queen);
         assert!(Rank::Two < Rank::Three);
     }
+
+    #[test]
+    fn test_deck_all_unique() {
+        let deck = Deck::new();
+        let mut seen = std::collections::HashSet::new();
+        for card in &deck.cards {
+            let key = (card.suit, card.rank);
+            assert!(!seen.contains(&key), "Duplicate card found: {:?}", card);
+            seen.insert(key);
+        }
+        assert_eq!(seen.len(), 52);
+    }
+
+    #[test]
+    fn test_card_display() {
+        let card = Card::new(Suit::Hearts, Rank::Ace);
+        assert_eq!(format!("{}", card), "A♥");
+    }
 }

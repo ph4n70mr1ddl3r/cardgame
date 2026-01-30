@@ -36,9 +36,10 @@ impl Dealer {
 
     fn post_blinds(game: &mut GameState) -> Result<()> {
         if game.players.len() < 2 {
-            return Err(crate::error::PokerError::Game(
-                "Need at least 2 players to post blinds".to_string(),
-            ));
+            return Err(crate::error::PokerError::Game(format!(
+                "Need at least 2 players to post blinds, got {}",
+                game.players.len()
+            )));
         }
 
         let sb_player_idx = game.dealer_index;
@@ -204,5 +205,13 @@ mod tests {
 
         assert_eq!(game.stage, GameStage::River);
         assert_eq!(game.community_cards.len(), 5);
+    }
+
+    #[test]
+    fn test_start_new_hand_insufficient_players() {
+        let mut game = GameState::new(1, 50, 100);
+        game.add_player(1, "player1".to_string(), 100).unwrap();
+
+        assert!(Dealer::start_new_hand(&mut game).is_err());
     }
 }

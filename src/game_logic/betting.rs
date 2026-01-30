@@ -509,4 +509,28 @@ mod tests {
         BettingRules::apply_action(&mut game, 1, PlayerAction::Raise(400)).unwrap();
         assert_eq!(game.last_raise_amount, 200);
     }
+
+    #[test]
+    fn test_invalid_raise_amounts() {
+        let mut game = GameState::new(1, 50, 100);
+        game.add_player(1, "player1".to_string(), 10000).unwrap();
+        game.add_player(2, "player2".to_string(), 10000).unwrap();
+        Dealer::start_new_hand(&mut game).unwrap();
+
+        assert!(BettingRules::validate_action(&game, 0, &PlayerAction::Raise(0)).is_err());
+        assert!(BettingRules::validate_action(&game, 0, &PlayerAction::Raise(-50)).is_err());
+        assert!(BettingRules::validate_action(&game, 0, &PlayerAction::Raise(99)).is_err());
+    }
+
+    #[test]
+    fn test_action_after_fold() {
+        let mut game = GameState::new(1, 50, 100);
+        game.add_player(1, "player1".to_string(), 10000).unwrap();
+        game.add_player(2, "player2".to_string(), 10000).unwrap();
+        Dealer::start_new_hand(&mut game).unwrap();
+
+        game.players[0].is_folded = true;
+        assert!(BettingRules::validate_action(&game, 0, &PlayerAction::Check).is_err());
+        assert!(BettingRules::validate_action(&game, 0, &PlayerAction::Call).is_err());
+    }
 }

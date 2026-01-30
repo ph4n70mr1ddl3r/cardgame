@@ -534,4 +534,29 @@ mod tests {
         assert_eq!(rank_name(Rank::King), "King");
         assert_eq!(rank_name(Rank::Ace), "Ace");
     }
+
+    #[test]
+    fn test_evaluate_hand_wrong_card_count() {
+        let cards = vec![
+            make_card(Rank::Ace, Suit::Hearts),
+            make_card(Rank::King, Suit::Hearts),
+        ];
+        assert!(evaluate_hand(cards).is_err());
+    }
+
+    #[test]
+    fn test_straight_flush_king_high() {
+        let cards = vec![
+            make_card(Rank::King, Suit::Spades),
+            make_card(Rank::Queen, Suit::Spades),
+            make_card(Rank::Jack, Suit::Spades),
+            make_card(Rank::Ten, Suit::Spades),
+            make_card(Rank::Nine, Suit::Spades),
+            make_card(Rank::Two, Suit::Hearts),
+            make_card(Rank::Three, Suit::Clubs),
+        ];
+
+        let eval = evaluate_hand(cards).unwrap();
+        assert_eq!(eval.hand_rank, HandRank::StraightFlush);
+    }
 }

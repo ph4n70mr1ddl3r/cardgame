@@ -130,4 +130,20 @@ mod tests {
         assert!(player.add_chips(75).is_ok());
         assert_eq!(player.chips, 125);
     }
+
+    #[test]
+    fn test_negative_chip_operations() {
+        let mut player = Player::new(1, "test".to_string(), "hash".to_string(), 100);
+
+        assert!(player.deduct_chips(-10).is_err());
+        assert!(player.add_chips(-10).is_err());
+        assert_eq!(player.chips, 100);
+    }
+
+    #[test]
+    fn test_chip_overflow() {
+        let mut player = Player::new(1, "test".to_string(), "hash".to_string(), i64::MAX - 100);
+
+        assert!(player.add_chips(101).is_err());
+    }
 }

@@ -23,6 +23,14 @@ impl Table {
         big_blind: i64,
         max_players: i32,
     ) -> Result<Self> {
+        if name.trim().is_empty() {
+            return Err(PokerError::Game("Table name cannot be empty".to_string()));
+        }
+        if name.len() > 100 {
+            return Err(PokerError::Game(
+                "Table name cannot exceed 100 characters".to_string(),
+            ));
+        }
         if small_blind <= 0 {
             return Err(PokerError::Game("Small blind must be positive".to_string()));
         }
@@ -97,5 +105,20 @@ mod tests {
         table.current_players = 2;
         assert!(table.is_full());
         assert!(!table.can_join());
+    }
+
+    #[test]
+    fn test_table_name_validation() {
+        assert!(Table::new(1, "".to_string(), 50, 100).is_err());
+        assert!(Table::new(1, "   ".to_string(), 50, 100).is_err());
+        let long_name = "a".repeat(101);
+        assert!(Table::new(1, long_name, 50, 100).is_err());
+    }
+
+    #[test]
+    fn test_invalid_blinds() {
+        assert!(Table::new(1, "Table".to_string(), -1, 100).is_err());
+        assert!(Table::new(1, "Table".to_string(), 50, -1).is_err());
+        assert!(Table::new(1, "Table".to_string(), 100, 50).is_err());
     }
 }
