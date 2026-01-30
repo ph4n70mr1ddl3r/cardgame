@@ -14,17 +14,13 @@ pub const HOLE_CARDS: usize = 2;
 /// Number of community cards (flop, turn, river)
 pub const COMMUNITY_CARDS: usize = 5;
 
+pub use crate::password_policy::{MAX_PASSWORD_LEN, MIN_PASSWORD_LEN};
+
 /// Minimum username length
 pub const MIN_USERNAME_LEN: usize = 3;
 
 /// Maximum username length
 pub const MAX_USERNAME_LEN: usize = 20;
-
-/// Minimum password length
-pub const MIN_PASSWORD_LEN: usize = 8;
-
-/// Maximum password length
-pub const MAX_PASSWORD_LEN: usize = 128;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

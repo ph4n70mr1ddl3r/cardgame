@@ -32,7 +32,10 @@ impl Database {
             .max_connections(max_connections)
             .acquire_timeout(std::time::Duration::from_secs(30))
             .connect(database_url)
-            .await?;
+            .await
+            .map_err(|e| {
+                crate::error::PokerError::game(format!("Database connection failed: {}", e))
+            })?;
         Ok(Self {
             pool,
             starting_chips,
@@ -43,6 +46,17 @@ impl Database {
     /// Returns the maximum number of connections configured for this pool.
     pub fn max_connections(&self) -> u32 {
         self.max_connections
+    }
+
+    /// Checks database connectivity and returns true if healthy.
+    ///
+    /// Executes a simple query to verify the database connection is working.
+    #[must_use = "health check results should always be checked"]
+    pub async fn health_check(&self) -> bool {
+        sqlx::query("SELECT 1")
+            .fetch_one(&self.pool)
+            .await
+            .is_ok()
     }
 
     /// Creates database tables and indexes if they don't exist.
@@ -139,13 +153,22 @@ impl Database {
         })?;
         let password_hash = Self::hash_password(password)?;
 
-        let result =
-            sqlx::query("INSERT INTO players (username, password_hash, chips) VALUES (?, ?, ?)")
-                .bind(username)
-                .bind(&password_hash)
-                .bind(self.starting_chips)
-                .execute(&self.pool)
-                .await?;
+        let result = match sqlx::query(
+            "INSERT INTO players (username, password_hash, chips) VALUES (?, ?, ?)"
+        )
+        .bind(username)
+        .bind(&password_hash)
+        .bind(self.starting_chips)
+        .execute(&self.pool)
+        .await {
+            Ok(r) => r,
+            Err(sqlx::Error::Database(err)) if err.message().contains("UNIQUE constraint failed") => {
+                return Err(crate::error::PokerError::game(
+                    format!("Username '{}' is already taken", username)
+                ));
+            }
+            Err(e) => return Err(crate::error::PokerError::game(format!("Failed to create player: {}", e))),
+        };
 
         Ok(result.last_insert_rowid())
     }
@@ -153,6 +176,7 @@ impl Database {
     /// Retrieves a player by their username.
     ///
     /// Returns None if the player doesn't exist.
+    #[must_use = "player lookup result should always be checked"]
     pub async fn get_player_by_username(&self, username: &str) -> Result<Option<Player>> {
         let row = sqlx::query(
             "SELECT id, username, password_hash, chips, hands_played, hands_won FROM players WHERE username = ?"
@@ -160,6 +184,16 @@ impl Database {
         .bind(username)
         .fetch_optional(&self.pool)
         .await?;
+
+        if let Some(r) = &row {
+            let chips: i64 = r.get("chips");
+            if chips < 0 {
+                return Err(crate::error::PokerError::game(format!(
+                    "Data corruption: player '{}' has negative chips: {}",
+                    username, chips
+                )));
+            }
+        }
 
         Ok(row.map(|r| Player {
             id: r.get("id"),
@@ -174,6 +208,7 @@ impl Database {
     /// Retrieves a player by their database ID.
     ///
     /// Returns None if the player doesn't exist.
+    #[must_use = "player lookup result should always be checked"]
     pub async fn get_player_by_id(&self, player_id: i64) -> Result<Option<Player>> {
         let row = sqlx::query(
             "SELECT id, username, password_hash, chips, hands_played, hands_won FROM players WHERE id = ?"
@@ -181,6 +216,16 @@ impl Database {
         .bind(player_id)
         .fetch_optional(&self.pool)
         .await?;
+
+        if let Some(r) = &row {
+            let chips: i64 = r.get("chips");
+            if chips < 0 {
+                return Err(crate::error::PokerError::game(format!(
+                    "Data corruption: player ID {} has negative chips: {}",
+                    player_id, chips
+                )));
+            }
+        }
 
         Ok(row.map(|r| Player {
             id: r.get("id"),
@@ -254,6 +299,53 @@ impl Database {
         Ok(())
     }
 
+    /// Updates a player's chips and stats atomically within a transaction.
+    ///
+    /// This is useful for game completion where both chips and statistics need to be updated together.
+    ///
+    /// # Arguments
+    ///
+    /// * `player_id` - ID of player to update
+    /// * `chip_delta` - Amount to add (positive) or subtract (negative)
+    /// * `hands_played_delta` - Number of hands played to add
+    /// * `hands_won_delta` - Number of hands won to add
+    pub async fn update_chips_and_stats(
+        &self,
+        player_id: i64,
+        chip_delta: i64,
+        hands_played_delta: i64,
+        hands_won_delta: i64,
+    ) -> Result<()> {
+        self.transaction(|tx| Box::pin(async move {
+            sqlx::query("UPDATE players SET chips = chips + ? WHERE id = ? AND chips + ? >= 0")
+                .bind(chip_delta)
+                .bind(player_id)
+                .bind(chip_delta)
+                .execute(&mut **tx)
+                .await
+                .map_err(|e| {
+                    crate::error::PokerError::game(format!("Failed to update chips: {}", e))
+                })?;
+
+            if hands_played_delta < 0 || hands_won_delta < 0 {
+                return Err(crate::error::PokerError::game(
+                    "Stat deltas cannot be negative",
+                ));
+            }
+
+            sqlx::query(
+                "UPDATE players SET hands_played = hands_played + ?, hands_won = hands_won + ? WHERE id = ?"
+            )
+            .bind(hands_played_delta)
+            .bind(hands_won_delta)
+            .bind(player_id)
+            .execute(&mut **tx)
+            .await?;
+
+            Ok(())
+        })).await
+    }
+
     /// Verifies a player's password by comparing against stored hash.
     ///
     /// Uses Argon2 to verify the password hash. Returns the player if valid,
@@ -298,6 +390,7 @@ impl Database {
     /// - 3-20 characters
     /// - Must start with a letter
     /// - Only alphanumeric characters and underscores allowed
+    /// - No control characters or bidirectional override characters
     fn validate_username(username: &str) -> Result<()> {
         if username.len() < crate::models::game::MIN_USERNAME_LEN
             || username.len() > crate::models::game::MAX_USERNAME_LEN
@@ -318,6 +411,13 @@ impl Database {
                 "Username can only contain letters, numbers, and underscores",
             ));
         }
+        if username.chars().any(|c| {
+            c.is_control() || matches!(c, '\u{200B}'..='\u{200F}' | '\u{202A}'..='\u{202E}')
+        }) {
+            return Err(crate::error::PokerError::game(
+                "Username contains invalid characters",
+            ));
+        }
         Ok(())
     }
 
@@ -330,6 +430,47 @@ impl Database {
             .map_err(|e| crate::error::PokerError::password_hash(e.to_string()))?
             .to_string();
         Ok(hash)
+    }
+
+    /// Executes a function within a database transaction.
+    ///
+    /// The transaction is committed if the function returns Ok,
+    /// and rolled back if it returns an error.
+    ///
+    /// # Arguments
+    ///
+    /// * `f` - Async function that takes a mutable transaction reference
+    ///
+    /// # Example
+    ///
+    /// ```ignore
+    /// db.transaction(|tx| Box::pin(async move {
+    ///     sqlx::query("UPDATE players SET chips = chips + ? WHERE id = ?")
+    ///         .bind(50)
+    ///         .bind(player_id)
+    ///         .execute(&mut **tx)
+    ///         .await?;
+    ///     Ok(())
+    /// })).await
+    /// ```
+    pub async fn transaction<F, R>(&self, f: F) -> Result<R>
+    where
+        F: for<'tx> FnOnce(
+            &'tx mut sqlx::Transaction<'_, sqlx::Sqlite>,
+        ) -> futures::future::BoxFuture<'tx, Result<R>>,
+    {
+        let mut tx = self.pool.begin().await?;
+        let result = f(&mut tx).await;
+        match result {
+            Ok(r) => {
+                tx.commit().await?;
+                Ok(r)
+            }
+            Err(e) => {
+                tx.rollback().await?;
+                Err(e)
+            }
+        }
     }
 }
 
