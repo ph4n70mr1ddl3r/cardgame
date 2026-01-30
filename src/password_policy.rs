@@ -1,8 +1,15 @@
+//! Password policy and validation module.
+//!
+//! This module enforces password security requirements for player accounts.
+
 use thiserror::Error;
 
+/// Minimum password length requirement
 pub const MIN_PASSWORD_LEN: usize = 8;
+/// Maximum password length requirement
 pub const MAX_PASSWORD_LEN: usize = 128;
 
+/// Password validation errors.
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum PasswordError {
@@ -19,6 +26,13 @@ pub enum PasswordError {
     MissingDigit,
 }
 
+/// Validates password meets security requirements.
+///
+/// Requirements:
+/// - Length between 8 and 128 characters
+/// - At least one uppercase letter
+/// - At least one lowercase letter
+/// - At least one digit
 pub fn validate_password(password: &str) -> Result<(), PasswordError> {
     let len = password.len();
     if !(MIN_PASSWORD_LEN..=MAX_PASSWORD_LEN).contains(&len) {

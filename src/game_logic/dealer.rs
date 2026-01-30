@@ -5,6 +5,10 @@ use crate::models::game::{GameStage, GameState};
 pub struct Dealer;
 
 impl Dealer {
+    /// Starts a new hand of poker.
+    ///
+    /// Resets game state, posts blinds, deals hole cards, and sets
+    /// the current player to act (small blind in heads-up preflop).
     pub fn start_new_hand(game: &mut GameState) -> Result<()> {
         // Reset for new hand
         game.hand_number += 1;
@@ -127,21 +131,25 @@ impl Dealer {
         game.current_player_index = Some((game.dealer_index + 1) % game.players.len());
     }
 
+    /// Deals the flop (3 community cards) after burning one card.
     pub fn deal_flop(game: &mut GameState) -> Result<()> {
         Self::deal_community_cards(game, GameStage::Flop, 3);
         Ok(())
     }
 
+    /// Deals the turn (4th community card) after burning one card.
     pub fn deal_turn(game: &mut GameState) -> Result<()> {
         Self::deal_community_cards(game, GameStage::Turn, 1);
         Ok(())
     }
 
+    /// Deals the river (5th community card) after burning one card.
     pub fn deal_river(game: &mut GameState) -> Result<()> {
         Self::deal_community_cards(game, GameStage::River, 1);
         Ok(())
     }
 
+    /// Advances the game to showdown phase.
     pub fn advance_to_showdown(game: &mut GameState) {
         game.stage = GameStage::Showdown;
         game.current_player_index = None;

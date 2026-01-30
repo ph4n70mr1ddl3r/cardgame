@@ -1,5 +1,15 @@
+//! Error types for the poker server.
+//!
+//! This module defines comprehensive error types covering all aspects
+//! of the poker server: network, game logic, database, authentication,
+//! and validation errors.
+
 use thiserror::Error;
 
+/// Comprehensive error type for poker server.
+///
+/// Covers all error domains: network, game logic, database, authentication, and validation.
+/// Uses `#[non_exhaustive]` to allow adding new variants without breaking semver.
 #[derive(Error, Debug)]
 #[non_exhaustive]
 pub enum PokerError {

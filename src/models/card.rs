@@ -70,48 +70,56 @@ impl fmt::Display for Card {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Deck {
-    pub(crate) cards: Vec<Card>,
+    cards: Vec<Card>,
 }
 
 impl Deck {
+    /// Creates a new shuffled deck with all 52 cards.
     #[must_use]
     pub fn new() -> Self {
         let mut deck = Self {
-            cards: Vec::with_capacity(52),
+            cards: [Suit::Hearts, Suit::Diamonds, Suit::Clubs, Suit::Spades]
+                .iter()
+                .flat_map(|&suit| {
+                    [
+                        Rank::Two,
+                        Rank::Three,
+                        Rank::Four,
+                        Rank::Five,
+                        Rank::Six,
+                        Rank::Seven,
+                        Rank::Eight,
+                        Rank::Nine,
+                        Rank::Ten,
+                        Rank::Jack,
+                        Rank::Queen,
+                        Rank::King,
+                        Rank::Ace,
+                    ]
+                    .iter()
+                    .map(move |&rank| Card::new(suit, rank))
+                })
+                .collect(),
         };
-        for suit in [Suit::Hearts, Suit::Diamonds, Suit::Clubs, Suit::Spades] {
-            for rank in [
-                Rank::Two,
-                Rank::Three,
-                Rank::Four,
-                Rank::Five,
-                Rank::Six,
-                Rank::Seven,
-                Rank::Eight,
-                Rank::Nine,
-                Rank::Ten,
-                Rank::Jack,
-                Rank::Queen,
-                Rank::King,
-                Rank::Ace,
-            ] {
-                deck.cards.push(Card::new(suit, rank));
-            }
-        }
         deck.shuffle();
         deck
     }
 
+    /// Randomly shuffles the deck using a cryptographically secure RNG.
     pub fn shuffle(&mut self) {
         use rand::seq::SliceRandom;
         use rand::thread_rng;
         self.cards.shuffle(&mut thread_rng());
     }
 
+    /// Deals the top card from the deck.
+    ///
+    /// Returns `None` if the deck is empty.
     pub fn deal(&mut self) -> Option<Card> {
         self.cards.pop()
     }
 
+    /// Returns the number of cards remaining in the deck.
     #[must_use]
     pub fn remaining(&self) -> usize {
         self.cards.len()

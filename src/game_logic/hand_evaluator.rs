@@ -120,7 +120,7 @@ impl Ord for EvaluatedHand {
 ///
 /// # Arguments
 ///
-/// * `cards` - A vector of exactly 7 cards (2 hole + 5 community)
+/// * `cards` - A slice of exactly 7 cards (2 hole + 5 community)
 ///
 /// # Returns
 ///
@@ -129,7 +129,7 @@ impl Ord for EvaluatedHand {
 /// # Errors
 ///
 /// Returns an error if the input does not contain exactly 7 cards
-pub fn evaluate_hand(mut cards: Vec<Card>) -> Result<EvaluatedHand> {
+pub fn evaluate_hand(cards: &[Card]) -> Result<EvaluatedHand> {
     if cards.len() != 7 {
         return Err(PokerError::game(format!(
             "Must have exactly 7 cards (2 hole + 5 community), got {}",
@@ -137,7 +137,8 @@ pub fn evaluate_hand(mut cards: Vec<Card>) -> Result<EvaluatedHand> {
         )));
     }
 
-    cards.sort_by(|a, b| b.rank.cmp(&a.rank));
+    let mut sorted_cards = cards.to_vec();
+    sorted_cards.sort_by(|a, b| b.rank.cmp(&a.rank));
 
     let mut best_hand = EvaluatedHand {
         hand_rank: HandRank::HighCard,
@@ -145,7 +146,7 @@ pub fn evaluate_hand(mut cards: Vec<Card>) -> Result<EvaluatedHand> {
         description: String::new(),
     };
     for indices in Combinations::new(7, 5) {
-        let combo: Vec<Card> = indices.iter().map(|&i| cards[i]).collect();
+        let combo: Vec<Card> = indices.iter().map(|&i| sorted_cards[i]).collect();
         let eval = evaluate_five_cards(&combo);
         if eval > best_hand {
             best_hand = eval;
@@ -351,7 +352,7 @@ mod tests {
             make_card(Rank::Three, Suit::Clubs),
         ];
 
-        let eval = evaluate_hand(cards).unwrap();
+        let eval = evaluate_hand(&cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::RoyalFlush);
     }
 
@@ -367,7 +368,7 @@ mod tests {
             make_card(Rank::Three, Suit::Clubs),
         ];
 
-        let eval = evaluate_hand(cards).unwrap();
+        let eval = evaluate_hand(&cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::StraightFlush);
     }
 
@@ -383,7 +384,7 @@ mod tests {
             make_card(Rank::Three, Suit::Clubs),
         ];
 
-        let eval = evaluate_hand(cards).unwrap();
+        let eval = evaluate_hand(&cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::FourOfAKind);
     }
 
@@ -399,7 +400,7 @@ mod tests {
             make_card(Rank::Three, Suit::Clubs),
         ];
 
-        let eval = evaluate_hand(cards).unwrap();
+        let eval = evaluate_hand(&cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::FullHouse);
     }
 
@@ -415,7 +416,7 @@ mod tests {
             make_card(Rank::Queen, Suit::Hearts),
         ];
 
-        let eval = evaluate_hand(cards).unwrap();
+        let eval = evaluate_hand(&cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::Flush);
     }
 
@@ -431,7 +432,7 @@ mod tests {
             make_card(Rank::Ace, Suit::Diamonds),
         ];
 
-        let eval = evaluate_hand(cards).unwrap();
+        let eval = evaluate_hand(&cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::Straight);
     }
 
@@ -448,7 +449,7 @@ mod tests {
             make_card(Rank::Queen, Suit::Diamonds),
         ];
 
-        let eval = evaluate_hand(cards).unwrap();
+        let eval = evaluate_hand(&cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::Straight);
     }
 
@@ -464,7 +465,7 @@ mod tests {
             make_card(Rank::Three, Suit::Diamonds),
         ];
 
-        let eval = evaluate_hand(cards).unwrap();
+        let eval = evaluate_hand(&cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::ThreeOfAKind);
     }
 
@@ -480,7 +481,7 @@ mod tests {
             make_card(Rank::Three, Suit::Diamonds),
         ];
 
-        let eval = evaluate_hand(cards).unwrap();
+        let eval = evaluate_hand(&cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::TwoPair);
     }
 
@@ -496,7 +497,7 @@ mod tests {
             make_card(Rank::Three, Suit::Diamonds),
         ];
 
-        let eval = evaluate_hand(cards).unwrap();
+        let eval = evaluate_hand(&cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::Pair);
     }
 
@@ -512,7 +513,7 @@ mod tests {
             make_card(Rank::Three, Suit::Diamonds),
         ];
 
-        let eval = evaluate_hand(cards).unwrap();
+        let eval = evaluate_hand(&cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::HighCard);
     }
 
@@ -538,8 +539,8 @@ mod tests {
             make_card(Rank::Ace, Suit::Diamonds),
         ];
 
-        let flush_hand = evaluate_hand(flush_cards).unwrap();
-        let straight_hand = evaluate_hand(straight_cards).unwrap();
+        let flush_hand = evaluate_hand(&flush_cards).unwrap();
+        let straight_hand = evaluate_hand(&straight_cards).unwrap();
 
         assert!(flush_hand > straight_hand);
     }
@@ -567,7 +568,7 @@ mod tests {
             make_card(Rank::Ace, Suit::Hearts),
             make_card(Rank::King, Suit::Hearts),
         ];
-        assert!(evaluate_hand(cards).is_err());
+        assert!(evaluate_hand(&cards).is_err());
     }
 
     #[test]
@@ -582,7 +583,7 @@ mod tests {
             make_card(Rank::Three, Suit::Clubs),
         ];
 
-        let eval = evaluate_hand(cards).unwrap();
+        let eval = evaluate_hand(&cards).unwrap();
         assert_eq!(eval.hand_rank, HandRank::StraightFlush);
     }
 }

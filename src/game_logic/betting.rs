@@ -1,6 +1,10 @@
 use crate::error::{PokerError, Result};
 use crate::models::game::{GameState, PlayerAction, PlayerGameState};
 
+/// Betting rule validation and action application.
+///
+/// This struct provides methods for validating poker actions,
+/// applying them to game state, and determining valid moves.
 pub struct BettingRules;
 
 impl BettingRules {
@@ -342,10 +346,8 @@ impl BettingRules {
                 min_raise: Some(min_raise),
                 max_raise: Some(max_raise),
             });
-        }
 
-        // Can always go all-in if have chips
-        if player.chips > 0 {
+            // Can go all-in if have chips
             actions.push(ValidAction {
                 action: PlayerAction::AllIn,
                 min_raise: None,

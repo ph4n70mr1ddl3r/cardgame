@@ -11,13 +11,18 @@ use sqlx::{sqlite::SqlitePool, Row};
 /// Database layer for persistent storage
 pub struct Database {
     pool: SqlitePool,
-    /// Starting chip amount for new players
     starting_chips: i64,
-    /// Maximum number of connections in the pool
     max_connections: u32,
 }
 
 impl Database {
+    /// Creates a new database connection pool.
+    ///
+    /// # Arguments
+    ///
+    /// * `database_url` - SQLite database connection string
+    /// * `starting_chips` - Initial chips for new players
+    /// * `max_connections` - Maximum pool size
     pub async fn new(
         database_url: &str,
         starting_chips: i64,
@@ -25,6 +30,7 @@ impl Database {
     ) -> Result<Self> {
         let pool = sqlx::sqlite::SqlitePoolOptions::new()
             .max_connections(max_connections)
+            .acquire_timeout(std::time::Duration::from_secs(30))
             .connect(database_url)
             .await?;
         Ok(Self {
@@ -34,10 +40,17 @@ impl Database {
         })
     }
 
+    /// Returns the maximum number of connections configured for this pool.
     pub fn max_connections(&self) -> u32 {
         self.max_connections
     }
 
+    /// Creates database tables and indexes if they don't exist.
+    ///
+    /// Initializes the following tables:
+    /// - `players`: Stores player accounts and statistics
+    /// - `tables`: Stores poker table configurations
+    /// - `game_sessions`: Tracks game sessions for analytics
     pub async fn initialize_schema(&self) -> Result<()> {
         sqlx::query(
             r#"
@@ -115,7 +128,10 @@ impl Database {
         Ok(())
     }
 
-    // Player CRUD Operations
+    /// Creates a new player account with username and password.
+    ///
+    /// Validates username format and password strength, hashes the password
+    /// using Argon2, and stores the player with starting chips.
     pub async fn create_player(&self, username: &str, password: &str) -> Result<i64> {
         Self::validate_username(username)?;
         password_policy::validate_password(password).map_err(|e| {
@@ -134,6 +150,9 @@ impl Database {
         Ok(result.last_insert_rowid())
     }
 
+    /// Retrieves a player by their username.
+    ///
+    /// Returns None if the player doesn't exist.
     pub async fn get_player_by_username(&self, username: &str) -> Result<Option<Player>> {
         let row = sqlx::query(
             "SELECT id, username, password_hash, chips, hands_played, hands_won FROM players WHERE username = ?"
@@ -152,6 +171,9 @@ impl Database {
         }))
     }
 
+    /// Retrieves a player by their database ID.
+    ///
+    /// Returns None if the player doesn't exist.
     pub async fn get_player_by_id(&self, player_id: i64) -> Result<Option<Player>> {
         let row = sqlx::query(
             "SELECT id, username, password_hash, chips, hands_played, hands_won FROM players WHERE id = ?"
@@ -207,6 +229,9 @@ impl Database {
         Ok(())
     }
 
+    /// Updates a player's game statistics.
+    ///
+    /// Increments hands_played and hands_won by the specified deltas.
     pub async fn update_player_stats(
         &self,
         player_id: i64,
@@ -267,7 +292,12 @@ impl Database {
         }
     }
 
-    // Helper functions
+    /// Validates that a username meets format requirements.
+    ///
+    /// Rules:
+    /// - 3-20 characters
+    /// - Must start with a letter
+    /// - Only alphanumeric characters and underscores allowed
     fn validate_username(username: &str) -> Result<()> {
         if username.len() < crate::models::game::MIN_USERNAME_LEN
             || username.len() > crate::models::game::MAX_USERNAME_LEN
@@ -291,6 +321,7 @@ impl Database {
         Ok(())
     }
 
+    /// Hashes a password using Argon2 with a random salt.
     fn hash_password(password: &str) -> Result<String> {
         let salt = SaltString::generate(&mut OsRng);
         let argon2 = Argon2::default();

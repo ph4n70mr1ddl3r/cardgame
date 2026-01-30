@@ -1,3 +1,8 @@
+//! Configuration module for the poker server.
+//!
+//! This module handles loading and validating configuration from environment variables.
+//! All configuration values have sensible defaults but can be overridden.
+
 use serde::{Deserialize, Serialize};
 
 /// Server configuration loaded from environment variables or defaults
@@ -92,6 +97,25 @@ impl Default for Config {
 }
 
 impl Config {
+    /// Loads configuration from environment variables or uses defaults.
+    ///
+    /// # Environment Variables
+    ///
+    /// - `POKER_SERVER_HOST` - Server address (default: "127.0.0.1")
+    /// - `POKER_SERVER_PORT` - Server port (default: 8080)
+    /// - `POKER_DATABASE_URL` - Database connection string (default: "sqlite:poker.db")
+    /// - `POKER_MAX_TABLES` - Maximum concurrent tables (default: 5)
+    /// - `POKER_SMALL_BLIND` - Small blind amount (default: 50)
+    /// - `POKER_BIG_BLIND` - Big blind amount (default: 100)
+    /// - `POKER_MIN_BUYIN_BB` - Minimum buy-in in big blinds (default: 20)
+    /// - `POKER_MAX_BUYIN_BB` - Maximum buy-in in big blinds (default: 100)
+    /// - `POKER_FAUCET_AMOUNT` - Top-up amount (default: 100)
+    /// - `POKER_STARTING_CHIPS` - Starting chips for new players (default: 100)
+    /// - `POKER_DB_MAX_CONNECTIONS` - Database pool size (default: 10)
+    ///
+    /// # Returns
+    ///
+    /// Returns validated configuration or error if values are invalid
     pub fn from_env() -> std::result::Result<Self, crate::error::PokerError> {
         let config = Self {
             server_host: Self::get_env_string("POKER_SERVER_HOST", "127.0.0.1"),

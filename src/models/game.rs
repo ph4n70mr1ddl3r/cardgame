@@ -156,6 +156,13 @@ pub struct SidePot {
 // Reference: https://en.wikipedia.org/wiki/Split_pot
 
 impl GameState {
+    /// Creates a new game state for a poker table.
+    ///
+    /// # Arguments
+    ///
+    /// * `table_id` - Unique table identifier
+    /// * `small_blind` - Small blind amount
+    /// * `big_blind` - Big blind amount
     #[must_use]
     pub fn new(table_id: i64, small_blind: i64, big_blind: i64) -> Self {
         Self {
@@ -176,6 +183,19 @@ impl GameState {
         }
     }
 
+    /// Adds a player to the game.
+    ///
+    /// First player becomes dealer, second becomes non-dealer.
+    ///
+    /// # Arguments
+    ///
+    /// * `player_id` - Player's unique identifier
+    /// * `username` - Player's username
+    /// * `buyin` - Amount of chips player brings to table
+    ///
+    /// # Errors
+    ///
+    /// Returns error if maximum players (2 for heads-up) already seated
     pub fn add_player(&mut self, player_id: i64, username: String, buyin: i64) -> Result<()> {
         if self.players.len() >= MAX_PLAYERS {
             return Err(crate::error::PokerError::game(format!(
@@ -189,6 +209,7 @@ impl GameState {
         Ok(())
     }
 
+    /// Checks if game can start (both players seated).
     #[must_use]
     pub fn is_ready_to_start(&self) -> bool {
         self.players.len() == MAX_PLAYERS && self.stage == GameStage::WaitingForPlayers
@@ -200,6 +221,11 @@ impl GameState {
             .filter(|p| !p.is_folded && !p.is_disconnected)
     }
 
+    /// Rotates dealer button to next player.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if no players are present
     pub fn next_dealer(&mut self) -> Result<()> {
         if self.players.is_empty() {
             return Err(crate::error::PokerError::game(

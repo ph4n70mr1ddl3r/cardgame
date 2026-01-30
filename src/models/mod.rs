@@ -1,3 +1,13 @@
+//! Core data models for the poker server.
+//!
+//! This module defines all the core data structures used throughout
+//! the application including cards, players, tables, and game states.
+
+//! Core data models for the poker server.
+//!
+//! This module defines all the core data structures used throughout
+//! the application including cards, players, tables, and game states.
+
 pub mod card;
 pub mod game;
 pub mod messages;

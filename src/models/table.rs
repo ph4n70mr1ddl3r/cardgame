@@ -12,10 +12,12 @@ pub struct Table {
 }
 
 impl Table {
+    /// Creates a new table with standard maximum of 2 players (heads-up).
     pub fn new(id: i64, name: String, small_blind: i64, big_blind: i64) -> Result<Self> {
         Self::with_max_players(id, name, small_blind, big_blind, 2)
     }
 
+    /// Creates a new table with custom maximum player count.
     pub fn with_max_players(
         id: i64,
         name: String,

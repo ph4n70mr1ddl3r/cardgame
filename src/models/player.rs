@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct Player {
     pub id: i64,
     pub username: String,
+    /// Password hash using Argon2 - excluded from serialization to prevent accidental exposure
     #[serde(skip_serializing)]
     pub password_hash: String,
     pub chips: i64,
@@ -12,6 +13,14 @@ pub struct Player {
 }
 
 impl Player {
+    /// Creates a new player instance.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - Unique player identifier
+    /// * `username` - Player's username
+    /// * `password_hash` - Argon2 hashed password
+    /// * `starting_chips` - Initial chip balance
     #[must_use]
     pub fn new(id: i64, username: String, password_hash: String, starting_chips: i64) -> Self {
         Self {
@@ -24,11 +33,20 @@ impl Player {
         }
     }
 
+    /// Checks if player is eligible for chip top-up.
+    ///
+    /// Players can top up when their balance falls below threshold.
     #[must_use]
     pub fn can_top_up(&self, threshold: i64) -> bool {
         self.chips < threshold
     }
 
+    /// Adds chips to player's balance if below threshold.
+    ///
+    /// # Arguments
+    ///
+    /// * `faucet_amount` - Number of chips to add
+    /// * `threshold` - Minimum balance required to be eligible
     pub fn top_up(
         &mut self,
         faucet_amount: i64,
@@ -43,6 +61,15 @@ impl Player {
         Ok(())
     }
 
+    /// Removes chips from player's balance.
+    ///
+    /// # Arguments
+    ///
+    /// * `amount` - Chips to deduct (must be non-negative)
+    ///
+    /// # Errors
+    ///
+    /// Returns error if amount is negative or exceeds current balance
     pub fn deduct_chips(&mut self, amount: i64) -> Result<(), crate::error::PokerError> {
         if amount < 0 {
             return Err(crate::error::PokerError::game(
@@ -61,6 +88,15 @@ impl Player {
         }
     }
 
+    /// Adds chips to player's balance.
+    ///
+    /// # Arguments
+    ///
+    /// * `amount` - Chips to add (must be non-negative)
+    ///
+    /// # Errors
+    ///
+    /// Returns error if amount is negative or would cause overflow
     pub fn add_chips(&mut self, amount: i64) -> Result<(), crate::error::PokerError> {
         if amount < 0 {
             return Err(crate::error::PokerError::game("Cannot add negative amount"));
