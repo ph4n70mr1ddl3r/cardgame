@@ -54,10 +54,7 @@ impl Database {
     /// Executes a simple query to verify the database connection is working.
     #[must_use = "health check results should always be checked"]
     pub async fn health_check(&self) -> bool {
-        sqlx::query("SELECT 1")
-            .fetch_one(&self.pool)
-            .await
-            .is_ok()
+        sqlx::query("SELECT 1").fetch_one(&self.pool).await.is_ok()
     }
 
     /// Creates database tables and indexes if they don't exist.
@@ -155,20 +152,29 @@ impl Database {
         let password_hash = Self::hash_password(password)?;
 
         let result = match sqlx::query(
-            "INSERT INTO players (username, password_hash, chips) VALUES (?, ?, ?)"
+            "INSERT INTO players (username, password_hash, chips) VALUES (?, ?, ?)",
         )
         .bind(username)
         .bind(&password_hash)
         .bind(self.starting_chips)
         .execute(&self.pool)
-        .await {
+        .await
+        {
             Ok(r) => r,
-            Err(sqlx::Error::Database(err)) if err.message().contains("UNIQUE constraint failed") => {
-                return Err(crate::error::PokerError::game(
-                    format!("Username '{}' is already taken", username)
-                ));
+            Err(sqlx::Error::Database(err))
+                if err.message().contains("UNIQUE constraint failed") =>
+            {
+                return Err(crate::error::PokerError::game(format!(
+                    "Username '{}' is already taken",
+                    username
+                )));
             }
-            Err(e) => return Err(crate::error::PokerError::game(format!("Failed to create player: {}", e))),
+            Err(e) => {
+                return Err(crate::error::PokerError::game(format!(
+                    "Failed to create player: {}",
+                    e
+                )))
+            }
         };
 
         Ok(result.last_insert_rowid())
@@ -335,7 +341,7 @@ impl Database {
             }
 
             sqlx::query(
-                "UPDATE players SET hands_played = hands_played + ?, hands_won = hands_won + ? WHERE id = ?"
+                "UPDATE players SET hands_played = hands_played + ?, hands_won = hands_won + ? WHERE id = ?",
             )
             .bind(hands_played_delta)
             .bind(hands_won_delta)
@@ -344,7 +350,8 @@ impl Database {
             .await?;
 
             Ok(())
-        })).await
+        }))
+        .await
     }
 
     /// Verifies a player's password by comparing against stored hash.

@@ -10,7 +10,9 @@ struct Combinations {
 
 impl Combinations {
     fn new(n: usize) -> Self {
-        assert!(n >= 5, "Need at least 5 cards for combinations");
+        if n < 5 {
+            panic!("Need at least 5 cards for combinations");
+        }
         Self {
             n,
             state: [0, 1, 2, 3, 4],

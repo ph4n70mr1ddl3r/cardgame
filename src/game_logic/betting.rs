@@ -44,7 +44,7 @@ impl BettingRules {
             PlayerAction::Check => Self::validate_check(game, player),
             PlayerAction::Call => Self::validate_call(game, player),
             PlayerAction::Raise(amount) => Self::validate_raise(game, player, *amount),
-            PlayerAction::AllIn => Self::validate_all_in(game, player),
+            PlayerAction::AllIn => Self::validate_all_in(player),
         }
     }
 
@@ -116,7 +116,7 @@ impl BettingRules {
         Ok(())
     }
 
-    fn validate_all_in(_game: &GameState, player: &PlayerGameState) -> Result<()> {
+    fn validate_all_in(player: &PlayerGameState) -> Result<()> {
         if player.chips == 0 {
             return Err(PokerError::invalid_action(
                 "Cannot go all-in when already at 0 chips",
