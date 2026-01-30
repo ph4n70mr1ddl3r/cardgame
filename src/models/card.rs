@@ -109,7 +109,8 @@ impl Deck {
     pub fn shuffle(&mut self) {
         use rand::seq::SliceRandom;
         use rand::thread_rng;
-        self.cards.shuffle(&mut thread_rng());
+        let mut rng = thread_rng();
+        self.cards.shuffle(&mut rng);
     }
 
     /// Deals the top card from the deck.

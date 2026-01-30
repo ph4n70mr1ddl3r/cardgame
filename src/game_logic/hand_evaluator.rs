@@ -4,26 +4,17 @@ use std::collections::HashMap;
 
 struct Combinations {
     n: usize,
-    k: usize,
-    state: Vec<usize>,
-    first: bool,
+    state: [usize; 5],
+    finished: bool,
 }
 
 impl Combinations {
-    fn new(n: usize, k: usize) -> Self {
-        if k > n {
-            return Self {
-                n,
-                k,
-                state: Vec::new(),
-                first: false,
-            };
-        }
+    fn new(n: usize) -> Self {
+        assert!(n >= 5, "Need at least 5 cards for combinations");
         Self {
             n,
-            k,
-            state: (0..k).collect(),
-            first: true,
+            state: [0, 1, 2, 3, 4],
+            finished: false,
         }
     }
 }
@@ -32,48 +23,28 @@ impl Iterator for Combinations {
     type Item = [usize; 5];
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.k > self.n {
+        if self.finished {
             return None;
         }
 
-        if self.first {
-            self.first = false;
-            if self.k == 5 {
-                return Some([
-                    self.state[0],
-                    self.state[1],
-                    self.state[2],
-                    self.state[3],
-                    self.state[4],
-                ]);
-            }
-            return None;
+        let result = self.state;
+
+        if self.state == [self.n - 5, self.n - 4, self.n - 3, self.n - 2, self.n - 1] {
+            self.finished = true;
+            return Some(result);
         }
 
-        let mut i = self.k - 1;
-        while i > 0 && self.state[i] == self.n - self.k + i {
+        let mut i = 4;
+        while self.state[i] == self.n - 5 + i {
             i -= 1;
         }
 
-        if i == 0 && self.state[0] == self.n - self.k {
-            return None;
-        }
-
         self.state[i] += 1;
-        for j in (i + 1)..self.k {
+        for j in (i + 1)..5 {
             self.state[j] = self.state[j - 1] + 1;
         }
 
-        if self.k == 5 {
-            return Some([
-                self.state[0],
-                self.state[1],
-                self.state[2],
-                self.state[3],
-                self.state[4],
-            ]);
-        }
-        None
+        Some(result)
     }
 }
 
@@ -145,7 +116,7 @@ pub fn evaluate_hand(cards: &[Card]) -> Result<EvaluatedHand> {
         rank_values: vec![],
         description: String::new(),
     };
-    for indices in Combinations::new(7, 5) {
+    for indices in Combinations::new(7) {
         let combo: Vec<Card> = indices.iter().map(|&i| sorted_cards[i]).collect();
         let eval = evaluate_five_cards(&combo);
         if eval > best_hand {

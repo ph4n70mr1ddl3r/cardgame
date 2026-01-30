@@ -3,10 +3,10 @@
 //! This module handles loading and validating configuration from environment variables.
 //! All configuration values have sensible defaults but can be overridden.
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 /// Server configuration loaded from environment variables or defaults
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Config {
     /// Server listening address
     pub server_host: String,

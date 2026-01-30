@@ -44,6 +44,7 @@ impl Database {
     }
 
     /// Returns the maximum number of connections configured for this pool.
+    #[inline]
     pub fn max_connections(&self) -> u32 {
         self.max_connections
     }

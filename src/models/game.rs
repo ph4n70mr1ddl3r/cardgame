@@ -209,8 +209,9 @@ impl GameState {
         Ok(())
     }
 
-    /// Checks if game can start (both players seated).
+    /// Checks if game can start (both players seated and waiting for players stage).
     #[must_use]
+    #[inline]
     pub fn is_ready_to_start(&self) -> bool {
         self.players.len() == MAX_PLAYERS && self.stage == GameStage::WaitingForPlayers
     }
