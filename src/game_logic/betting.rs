@@ -73,7 +73,13 @@ impl BettingRules {
     }
 
     fn validate_raise(game: &GameState, player: &PlayerGameState, raise_to: i64) -> Result<()> {
-        if raise_to <= 0 {
+        if raise_to < 0 {
+            return Err(PokerError::invalid_action(
+                "Raise amount cannot be negative",
+            ));
+        }
+
+        if raise_to == 0 {
             return Err(PokerError::invalid_action("Raise amount must be positive"));
         }
 
@@ -332,7 +338,7 @@ impl BettingRules {
                 .checked_add(player.bet_this_round)
                 .ok_or_else(|| PokerError::game("Overflow in maximum raise calculation"))?;
             actions.push(ValidAction {
-                action: PlayerAction::Raise(0),
+                action: PlayerAction::Raise(min_raise),
                 min_raise: Some(min_raise),
                 max_raise: Some(max_raise),
             });

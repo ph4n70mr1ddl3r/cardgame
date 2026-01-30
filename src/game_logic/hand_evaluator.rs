@@ -156,7 +156,7 @@ pub fn evaluate_hand(mut cards: Vec<Card>) -> Result<EvaluatedHand> {
 }
 
 fn evaluate_five_cards(cards: &[Card]) -> EvaluatedHand {
-    assert_eq!(
+    debug_assert_eq!(
         cards.len(),
         5,
         "evaluate_five_cards: Expected exactly 5 cards, got {}",

@@ -63,24 +63,24 @@ impl Dealer {
         let sb_actual = game.small_blind.min(game.players[sb_player_idx].chips);
         let bb_actual = game.big_blind.min(game.players[bb_player_idx].chips);
 
-        Self::post_blind(game, sb_player_idx, game.small_blind)?;
-        Self::post_blind(game, bb_player_idx, game.big_blind)?;
+        Self::post_blind_amount(game, sb_player_idx, sb_actual)?;
+        Self::post_blind_amount(game, bb_player_idx, bb_actual)?;
         game.current_bet = bb_actual.max(sb_actual);
 
         Ok(())
     }
 
-    fn post_blind(game: &mut GameState, player_idx: usize, blind_amount: i64) -> Result<()> {
-        let actual_amount = blind_amount.min(game.players[player_idx].chips);
-        game.players[player_idx].chips = game.players[player_idx]
-            .chips
-            .checked_sub(actual_amount)
-            .ok_or_else(|| crate::error::PokerError::game("Chip underflow posting blind"))?;
-        game.players[player_idx].bet_this_round = actual_amount;
-        game.players[player_idx].total_bet = actual_amount;
+    fn post_blind_amount(game: &mut GameState, player_idx: usize, blind_amount: i64) -> Result<()> {
+        game.players[player_idx].chips =
+            game.players[player_idx]
+                .chips
+                .checked_sub(blind_amount)
+                .ok_or_else(|| crate::error::PokerError::game("Chip underflow posting blind"))?;
+        game.players[player_idx].bet_this_round = blind_amount;
+        game.players[player_idx].total_bet = blind_amount;
         game.pot = game
             .pot
-            .checked_add(actual_amount)
+            .checked_add(blind_amount)
             .ok_or_else(|| crate::error::PokerError::game("Pot overflow posting blind"))?;
 
         if game.players[player_idx].chips == 0 {

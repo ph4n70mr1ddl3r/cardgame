@@ -4,6 +4,7 @@ pub const MIN_PASSWORD_LEN: usize = 8;
 pub const MAX_PASSWORD_LEN: usize = 128;
 
 #[derive(Debug, Error)]
+#[non_exhaustive]
 pub enum PasswordError {
     #[error("Password length must be between {min} and {max} characters")]
     InvalidLength { min: usize, max: usize },
