@@ -34,9 +34,24 @@ impl Dealer {
         Ok(())
     }
 
+    /// Posts the small and big blinds for the current hand.
+    ///
+    /// In heads-up poker, the dealer posts the small blind and acts last preflop.
+    /// The other player posts the big blind and acts first preflop.
+    ///
+    /// This function handles the case where a player doesn't have enough chips
+    /// to post the full blind amount (they go all-in with whatever they have).
+    ///
+    /// # Arguments
+    ///
+    /// * `game` - Mutable reference to the game state
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if fewer than 2 players are present
     fn post_blinds(game: &mut GameState) -> Result<()> {
         if game.players.len() < 2 {
-            return Err(crate::error::PokerError::Game(format!(
+            return Err(crate::error::PokerError::game(format!(
                 "Need at least 2 players to post blinds, got {}",
                 game.players.len()
             )));
@@ -60,14 +75,13 @@ impl Dealer {
         game.players[player_idx].chips = game.players[player_idx]
             .chips
             .checked_sub(actual_amount)
-            .ok_or_else(|| {
-                crate::error::PokerError::Game("Chip underflow posting blind".to_string())
-            })?;
+            .ok_or_else(|| crate::error::PokerError::game("Chip underflow posting blind"))?;
         game.players[player_idx].bet_this_round = actual_amount;
         game.players[player_idx].total_bet = actual_amount;
-        game.pot = game.pot.checked_add(actual_amount).ok_or_else(|| {
-            crate::error::PokerError::Game("Pot overflow posting blind".to_string())
-        })?;
+        game.pot = game
+            .pot
+            .checked_add(actual_amount)
+            .ok_or_else(|| crate::error::PokerError::game("Pot overflow posting blind"))?;
 
         if game.players[player_idx].chips == 0 {
             game.players[player_idx].is_all_in = true;

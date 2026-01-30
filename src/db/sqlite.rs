@@ -1,5 +1,6 @@
 use crate::error::Result;
 use crate::models::Player;
+use crate::password_policy;
 use argon2::{
     password_hash::{PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
     Argon2,
@@ -119,39 +120,25 @@ impl Database {
         if username.len() < crate::models::game::MIN_USERNAME_LEN
             || username.len() > crate::models::game::MAX_USERNAME_LEN
         {
-            return Err(crate::error::PokerError::Game(format!(
+            return Err(crate::error::PokerError::game(format!(
                 "Username must be between {} and {} characters",
                 crate::models::game::MIN_USERNAME_LEN,
                 crate::models::game::MAX_USERNAME_LEN
             )));
         }
         if !username.chars().all(|c| c.is_alphanumeric() || c == '_') {
-            return Err(crate::error::PokerError::Game(
-                "Username can only contain letters, numbers, and underscores".to_string(),
+            return Err(crate::error::PokerError::game(
+                "Username can only contain letters, numbers, and underscores",
             ));
         }
         if !username.chars().next().is_some_and(char::is_alphabetic) {
-            return Err(crate::error::PokerError::Game(
-                "Username must start with a letter".to_string(),
+            return Err(crate::error::PokerError::game(
+                "Username must start with a letter",
             ));
         }
-        if password.len() < crate::models::game::MIN_PASSWORD_LEN
-            || password.len() > crate::models::game::MAX_PASSWORD_LEN
-        {
-            return Err(crate::error::PokerError::Game(format!(
-                "Password must be between {} and {} characters",
-                crate::models::game::MIN_PASSWORD_LEN,
-                crate::models::game::MAX_PASSWORD_LEN
-            )));
-        }
-        let has_upper = password.chars().any(|c| c.is_uppercase());
-        let has_lower = password.chars().any(|c| c.is_lowercase());
-        let has_digit = password.chars().any(|c| c.is_ascii_digit());
-        if !has_upper || !has_lower || !has_digit {
-            return Err(crate::error::PokerError::Game(
-                "Password must contain at least one uppercase letter, one lowercase letter, and one digit".to_string(),
-            ));
-        }
+        password_policy::validate_password(password).map_err(|e| {
+            crate::error::PokerError::game(format!("Password validation failed: {e}"))
+        })?;
         let password_hash = Self::hash_password(password)?;
 
         let result =
@@ -230,8 +217,8 @@ impl Database {
                 .await?;
 
         if result.rows_affected() == 0 {
-            return Err(crate::error::PokerError::Game(
-                "Insufficient chips or player not found".to_string(),
+            return Err(crate::error::PokerError::game(
+                "Insufficient chips or player not found",
             ));
         }
 
@@ -245,8 +232,8 @@ impl Database {
         hands_won_delta: i64,
     ) -> Result<()> {
         if hands_played_delta < 0 || hands_won_delta < 0 {
-            return Err(crate::error::PokerError::Game(
-                "Stat deltas cannot be negative".to_string(),
+            return Err(crate::error::PokerError::game(
+                "Stat deltas cannot be negative",
             ));
         }
         sqlx::query(
@@ -283,7 +270,7 @@ impl Database {
         };
 
         let parsed_hash = PasswordHash::new(&player.password_hash).map_err(|e| {
-            crate::error::PokerError::Auth(format!("Invalid password hash format: {e}"))
+            crate::error::PokerError::auth(format!("Invalid password hash format: {e}"))
         })?;
 
         let is_valid = Argon2::default()
@@ -303,7 +290,7 @@ impl Database {
         let argon2 = Argon2::default();
         let hash = argon2
             .hash_password(password.as_bytes(), &salt)
-            .map_err(|e| crate::error::PokerError::PasswordHash(e.to_string()))?
+            .map_err(|e| crate::error::PokerError::password_hash(e.to_string()))?
             .to_string();
         Ok(hash)
     }

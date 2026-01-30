@@ -24,28 +24,22 @@ impl Table {
         max_players: i32,
     ) -> Result<Self> {
         if name.trim().is_empty() {
-            return Err(PokerError::Game("Table name cannot be empty".to_string()));
+            return Err(PokerError::game("Table name cannot be empty"));
         }
         if name.len() > 100 {
-            return Err(PokerError::Game(
-                "Table name cannot exceed 100 characters".to_string(),
-            ));
+            return Err(PokerError::game("Table name cannot exceed 100 characters"));
         }
         if small_blind <= 0 {
-            return Err(PokerError::Game("Small blind must be positive".to_string()));
+            return Err(PokerError::game("Small blind must be positive"));
         }
         if big_blind <= 0 {
-            return Err(PokerError::Game("Big blind must be positive".to_string()));
+            return Err(PokerError::game("Big blind must be positive"));
         }
         if big_blind < small_blind {
-            return Err(PokerError::Game(
-                "Big blind must be >= small blind".to_string(),
-            ));
+            return Err(PokerError::game("Big blind must be >= small blind"));
         }
         if max_players < 2 {
-            return Err(PokerError::Game(
-                "Max players must be at least 2".to_string(),
-            ));
+            return Err(PokerError::game("Max players must be at least 2"));
         }
 
         Ok(Self {
@@ -69,17 +63,17 @@ impl Table {
 
     pub fn validate_buyin(&self, buyin: i64, min_buyin_bb: u32, max_buyin_bb: u32) -> Result<()> {
         if buyin < 0 {
-            return Err(PokerError::Game("Buy-in cannot be negative".to_string()));
+            return Err(PokerError::game("Buy-in cannot be negative"));
         }
         let min_buyin = self.big_blind * i64::from(min_buyin_bb);
         let max_buyin = self.big_blind * i64::from(max_buyin_bb);
         if buyin < min_buyin {
-            return Err(PokerError::Game(format!(
+            return Err(PokerError::game(format!(
                 "Buy-in must be at least {min_buyin_bb} big blinds"
             )));
         }
         if buyin > max_buyin {
-            return Err(PokerError::Game(format!(
+            return Err(PokerError::game(format!(
                 "Buy-in cannot exceed {max_buyin_bb} big blinds"
             )));
         }

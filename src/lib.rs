@@ -6,6 +6,7 @@ pub mod error;
 pub mod game_logic;
 pub mod logger;
 pub mod models;
+pub mod password_policy;
 pub mod table_manager;
 pub mod websocket;
 

@@ -48,6 +48,13 @@ pub enum PlayerAction {
     AllIn,
 }
 
+/// Represents a valid action a player can take in the current game state.
+///
+/// # Fields
+///
+/// * `action` - The type of action (Fold, Check, Call, Raise, AllIn)
+/// * `min_raise` - Minimum raise amount for Raise actions, None otherwise
+/// * `max_raise` - Maximum raise amount for Raise actions, None otherwise
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ValidAction {
     pub action: PlayerAction,
@@ -171,13 +178,10 @@ impl GameState {
 
     pub fn add_player(&mut self, player_id: i64, username: String, buyin: i64) -> Result<()> {
         if self.players.len() >= MAX_PLAYERS {
-            return Err(crate::error::PokerError::Game(
-                format!(
-                    "Cannot add more than {} players in heads-up poker",
-                    MAX_PLAYERS
-                )
-                .to_string(),
-            ));
+            return Err(crate::error::PokerError::game(format!(
+                "Cannot add more than {} players in heads-up poker",
+                MAX_PLAYERS
+            )));
         }
         let is_dealer = self.players.is_empty();
         self.players
@@ -198,8 +202,8 @@ impl GameState {
 
     pub fn next_dealer(&mut self) -> Result<()> {
         if self.players.is_empty() {
-            return Err(crate::error::PokerError::Game(
-                "Cannot rotate dealer with no players".to_string(),
+            return Err(crate::error::PokerError::game(
+                "Cannot rotate dealer with no players",
             ));
         }
         self.dealer_index = (self.dealer_index + 1) % self.players.len();

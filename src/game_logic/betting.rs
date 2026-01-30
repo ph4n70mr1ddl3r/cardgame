@@ -28,11 +28,11 @@ impl BettingRules {
         let player = &game.players[player_idx];
 
         if player.is_folded {
-            return Err(PokerError::InvalidAction("Player has folded".to_string()));
+            return Err(PokerError::invalid_action("Player has folded"));
         }
 
         if player.is_all_in {
-            return Err(PokerError::InvalidAction("Player is all-in".to_string()));
+            return Err(PokerError::invalid_action("Player is all-in"));
         }
 
         match action {
@@ -46,7 +46,7 @@ impl BettingRules {
 
     fn validate_check(game: &GameState, player: &PlayerGameState) -> Result<()> {
         if player.bet_this_round < game.current_bet {
-            return Err(PokerError::InvalidAction(format!(
+            return Err(PokerError::invalid_action(format!(
                 "Cannot check when facing a bet of {} (have bet {})",
                 game.current_bet, player.bet_this_round
             )));
@@ -56,14 +56,14 @@ impl BettingRules {
 
     fn validate_call(game: &GameState, player: &PlayerGameState) -> Result<()> {
         if player.bet_this_round >= game.current_bet {
-            return Err(PokerError::InvalidAction(
-                "No bet to call (should check instead)".to_string(),
+            return Err(PokerError::invalid_action(
+                "No bet to call (should check instead)",
             ));
         }
 
         let call_amount = game.current_bet - player.bet_this_round;
         if call_amount > player.chips {
-            return Err(PokerError::InvalidAction(format!(
+            return Err(PokerError::invalid_action(format!(
                 "Insufficient chips to call {} (have {})",
                 call_amount, player.chips
             )));
@@ -74,13 +74,11 @@ impl BettingRules {
 
     fn validate_raise(game: &GameState, player: &PlayerGameState, raise_to: i64) -> Result<()> {
         if raise_to <= 0 {
-            return Err(PokerError::InvalidAction(
-                "Raise amount must be positive".to_string(),
-            ));
+            return Err(PokerError::invalid_action("Raise amount must be positive"));
         }
 
         if raise_to <= game.current_bet {
-            return Err(PokerError::InvalidAction(format!(
+            return Err(PokerError::invalid_action(format!(
                 "Raise amount {} must be greater than current bet {}",
                 raise_to, game.current_bet
             )));
@@ -88,19 +86,19 @@ impl BettingRules {
 
         let total_needed = raise_to
             .checked_sub(player.bet_this_round)
-            .ok_or_else(|| PokerError::InvalidAction("Invalid raise calculation".to_string()))?;
+            .ok_or_else(|| PokerError::invalid_action("Invalid raise calculation"))?;
 
         let min_raise = Self::calculate_min_raise(game)?;
 
         if raise_to < min_raise && total_needed < player.chips {
-            return Err(PokerError::InvalidAction(format!(
+            return Err(PokerError::invalid_action(format!(
                 "Minimum raise is {min_raise} (attempted {raise_to})"
             )));
         }
 
         let player_chips = player.chips;
         if total_needed > player_chips {
-            return Err(PokerError::InvalidAction(format!(
+            return Err(PokerError::invalid_action(format!(
                 "Insufficient chips for this raise (need {total_needed}, have {player_chips})"
             )));
         }
@@ -110,8 +108,8 @@ impl BettingRules {
 
     fn validate_all_in(_game: &GameState, player: &PlayerGameState) -> Result<()> {
         if player.chips == 0 {
-            return Err(PokerError::InvalidAction(
-                "Cannot go all-in when already at 0 chips".to_string(),
+            return Err(PokerError::invalid_action(
+                "Cannot go all-in when already at 0 chips",
             ));
         }
         Ok(())
@@ -138,7 +136,7 @@ impl BettingRules {
     fn calculate_min_raise(game: &GameState) -> Result<i64> {
         game.current_bet
             .checked_add(game.last_raise_amount)
-            .ok_or_else(|| PokerError::Game("Overflow in min raise calculation".to_string()))
+            .ok_or_else(|| PokerError::game("Overflow in min raise calculation"))
     }
 
     /// Applies a validated action to the game state, updating chips, pot, and player status.
@@ -169,11 +167,10 @@ impl BettingRules {
         action: PlayerAction,
     ) -> Result<()> {
         if player_idx >= game.players.len() {
-            return Err(PokerError::InvalidPlayerIndex(format!(
-                "Player index {} out of range (max {})",
+            return Err(PokerError::invalid_player_index(
                 player_idx,
-                game.players.len() - 1
-            )));
+                game.players.len() - 1,
+            ));
         }
 
         Self::validate_action(game, player_idx, &action)?;
@@ -192,19 +189,19 @@ impl BettingRules {
                 player.chips = player
                     .chips
                     .checked_sub(call_amount)
-                    .ok_or_else(|| PokerError::Game("Insufficient chips for call".to_string()))?;
+                    .ok_or_else(|| PokerError::game("Insufficient chips for call"))?;
                 player.bet_this_round = player
                     .bet_this_round
                     .checked_add(call_amount)
-                    .ok_or_else(|| PokerError::Game("Overflow in bet calculation".to_string()))?;
+                    .ok_or_else(|| PokerError::game("Overflow in bet calculation"))?;
                 player.total_bet = player
                     .total_bet
                     .checked_add(call_amount)
-                    .ok_or_else(|| PokerError::Game("Overflow in total bet".to_string()))?;
+                    .ok_or_else(|| PokerError::game("Overflow in total bet"))?;
                 game.pot = game
                     .pot
                     .checked_add(call_amount)
-                    .ok_or_else(|| PokerError::Game("Overflow in pot".to_string()))?;
+                    .ok_or_else(|| PokerError::game("Overflow in pot"))?;
 
                 if player.chips == 0 {
                     player.is_all_in = true;
@@ -215,16 +212,16 @@ impl BettingRules {
                 player.chips = player
                     .chips
                     .checked_sub(amount_to_add)
-                    .ok_or_else(|| PokerError::Game("Insufficient chips for raise".to_string()))?;
+                    .ok_or_else(|| PokerError::game("Insufficient chips for raise"))?;
                 player.bet_this_round = raise_to;
                 player.total_bet = player
                     .total_bet
                     .checked_add(amount_to_add)
-                    .ok_or_else(|| PokerError::Game("Overflow in total bet".to_string()))?;
+                    .ok_or_else(|| PokerError::game("Overflow in total bet"))?;
                 game.pot = game
                     .pot
                     .checked_add(amount_to_add)
-                    .ok_or_else(|| PokerError::Game("Overflow in pot".to_string()))?;
+                    .ok_or_else(|| PokerError::game("Overflow in pot"))?;
                 game.last_raise_amount = raise_to - game.current_bet;
                 game.current_bet = raise_to;
 
@@ -238,15 +235,15 @@ impl BettingRules {
                 player.bet_this_round = player
                     .bet_this_round
                     .checked_add(all_in_amount)
-                    .ok_or_else(|| PokerError::Game("Overflow in bet calculation".to_string()))?;
+                    .ok_or_else(|| PokerError::game("Overflow in bet calculation"))?;
                 player.total_bet = player
                     .total_bet
                     .checked_add(all_in_amount)
-                    .ok_or_else(|| PokerError::Game("Overflow in total bet".to_string()))?;
+                    .ok_or_else(|| PokerError::game("Overflow in total bet"))?;
                 game.pot = game
                     .pot
                     .checked_add(all_in_amount)
-                    .ok_or_else(|| PokerError::Game("Overflow in pot".to_string()))?;
+                    .ok_or_else(|| PokerError::game("Overflow in pot"))?;
                 player.is_all_in = true;
 
                 if player.bet_this_round > game.current_bet {
@@ -331,9 +328,7 @@ impl BettingRules {
             let max_raise = player
                 .chips
                 .checked_add(player.bet_this_round)
-                .ok_or_else(|| {
-                    PokerError::Game("Overflow in maximum raise calculation".to_string())
-                })?;
+                .ok_or_else(|| PokerError::game("Overflow in maximum raise calculation"))?;
             actions.push(ValidAction {
                 action: PlayerAction::Raise(0),
                 min_raise: Some(min_raise),

@@ -56,7 +56,7 @@ impl Ord for EvaluatedHand {
 /// Returns an error if the input does not contain exactly 7 cards
 pub fn evaluate_hand(mut cards: Vec<Card>) -> Result<EvaluatedHand> {
     if cards.len() != 7 {
-        return Err(PokerError::Game(format!(
+        return Err(PokerError::game(format!(
             "Must have exactly 7 cards (2 hole + 5 community), got {}",
             cards.len()
         )));

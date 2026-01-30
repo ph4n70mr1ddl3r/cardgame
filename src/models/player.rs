@@ -35,8 +35,8 @@ impl Player {
         threshold: i64,
     ) -> Result<(), crate::error::PokerError> {
         if !self.can_top_up(threshold) {
-            return Err(crate::error::PokerError::Game(
-                "Player already has enough chips to top up".to_string(),
+            return Err(crate::error::PokerError::game(
+                "Player already has enough chips to top up",
             ));
         }
         self.add_chips(faucet_amount)?;
@@ -45,38 +45,32 @@ impl Player {
 
     pub fn deduct_chips(&mut self, amount: i64) -> Result<(), crate::error::PokerError> {
         if amount < 0 {
-            return Err(crate::error::PokerError::Game(
-                "Cannot deduct negative amount".to_string(),
+            return Err(crate::error::PokerError::game(
+                "Cannot deduct negative amount",
             ));
         }
         if amount > self.chips {
-            return Err(crate::error::PokerError::Game(
-                "Insufficient chips".to_string(),
-            ));
+            return Err(crate::error::PokerError::game("Insufficient chips"));
         }
         match self.chips.checked_sub(amount) {
             Some(new_chips) => {
                 self.chips = new_chips;
                 Ok(())
             }
-            None => Err(crate::error::PokerError::Game(
-                "Insufficient chips".to_string(),
-            )),
+            None => Err(crate::error::PokerError::game("Insufficient chips")),
         }
     }
 
     pub fn add_chips(&mut self, amount: i64) -> Result<(), crate::error::PokerError> {
         if amount < 0 {
-            return Err(crate::error::PokerError::Game(
-                "Cannot add negative amount".to_string(),
-            ));
+            return Err(crate::error::PokerError::game("Cannot add negative amount"));
         }
         match self.chips.checked_add(amount) {
             Some(new_chips) => {
                 self.chips = new_chips;
                 Ok(())
             }
-            None => Err(crate::error::PokerError::Game("Chip overflow".to_string())),
+            None => Err(crate::error::PokerError::game("Chip overflow")),
         }
     }
 }
