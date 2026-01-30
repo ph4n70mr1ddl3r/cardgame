@@ -11,7 +11,7 @@ async fn main() -> poker_server::error::Result<()> {
         config.server_host,
         config.server_port
     );
-    tracing::info!("Database: {}", config.database_url);
+    tracing::info!("Database connected");
 
     let db = Database::new(
         &config.database_url,

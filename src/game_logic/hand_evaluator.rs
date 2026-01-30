@@ -2,6 +2,81 @@ use crate::error::{PokerError, Result};
 use crate::models::card::{Card, Rank};
 use std::collections::HashMap;
 
+struct Combinations {
+    n: usize,
+    k: usize,
+    state: Vec<usize>,
+    first: bool,
+}
+
+impl Combinations {
+    fn new(n: usize, k: usize) -> Self {
+        if k > n {
+            return Self {
+                n,
+                k,
+                state: Vec::new(),
+                first: false,
+            };
+        }
+        Self {
+            n,
+            k,
+            state: (0..k).collect(),
+            first: true,
+        }
+    }
+}
+
+impl Iterator for Combinations {
+    type Item = [usize; 5];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.k > self.n {
+            return None;
+        }
+
+        if self.first {
+            self.first = false;
+            if self.k == 5 {
+                return Some([
+                    self.state[0],
+                    self.state[1],
+                    self.state[2],
+                    self.state[3],
+                    self.state[4],
+                ]);
+            }
+            return None;
+        }
+
+        let mut i = self.k - 1;
+        while i > 0 && self.state[i] == self.n - self.k + i {
+            i -= 1;
+        }
+
+        if i == 0 && self.state[0] == self.n - self.k {
+            return None;
+        }
+
+        self.state[i] += 1;
+        for j in (i + 1)..self.k {
+            self.state[j] = self.state[j - 1] + 1;
+        }
+
+        if self.k == 5 {
+            return Some([
+                self.state[0],
+                self.state[1],
+                self.state[2],
+                self.state[3],
+                self.state[4],
+            ]);
+        }
+        None
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum HandRank {
     HighCard = 1,
@@ -69,7 +144,7 @@ pub fn evaluate_hand(mut cards: Vec<Card>) -> Result<EvaluatedHand> {
         rank_values: vec![],
         description: String::new(),
     };
-    for indices in combinations_indices(7, 5) {
+    for indices in Combinations::new(7, 5) {
         let combo: Vec<Card> = indices.iter().map(|&i| cards[i]).collect();
         let eval = evaluate_five_cards(&combo);
         if eval > best_hand {
@@ -236,55 +311,6 @@ fn check_straight(cards: &[Card]) -> bool {
     }
 
     false
-}
-
-/// Generates all possible combinations of k indices from n items.
-///
-/// # Arguments
-///
-/// * `n` - Total number of items
-/// * `k` - Size of each combination
-///
-/// # Returns
-///
-/// * `Vec<Vec<usize>>` - All combinations of indices
-fn combinations_indices(n: usize, k: usize) -> Vec<Vec<usize>> {
-    if k > n {
-        return vec![];
-    }
-
-    let mut result = Vec::new();
-    let mut combo = Vec::new();
-    combine_indices_helper(n, k, 0, &mut combo, &mut result);
-    result
-}
-
-/// Recursive helper function for generating combinations.
-///
-/// # Arguments
-///
-/// * `n` - Total number of items
-/// * `k` - Desired combination size
-/// * `start` - Starting index for current recursion level
-/// * `combo` - Current combination being built
-/// * `result` - Accumulator for all complete combinations
-fn combine_indices_helper(
-    n: usize,
-    k: usize,
-    start: usize,
-    combo: &mut Vec<usize>,
-    result: &mut Vec<Vec<usize>>,
-) {
-    if combo.len() == k {
-        result.push(combo.clone());
-        return;
-    }
-
-    for i in start..n {
-        combo.push(i);
-        combine_indices_helper(n, k, i + 1, combo, result);
-        combo.pop();
-    }
 }
 
 /// Returns the human-readable name of a card rank.

@@ -117,25 +117,7 @@ impl Database {
 
     // Player CRUD Operations
     pub async fn create_player(&self, username: &str, password: &str) -> Result<i64> {
-        if username.len() < crate::models::game::MIN_USERNAME_LEN
-            || username.len() > crate::models::game::MAX_USERNAME_LEN
-        {
-            return Err(crate::error::PokerError::game(format!(
-                "Username must be between {} and {} characters",
-                crate::models::game::MIN_USERNAME_LEN,
-                crate::models::game::MAX_USERNAME_LEN
-            )));
-        }
-        if !username.chars().all(|c| c.is_alphanumeric() || c == '_') {
-            return Err(crate::error::PokerError::game(
-                "Username can only contain letters, numbers, and underscores",
-            ));
-        }
-        if !username.chars().next().is_some_and(char::is_alphabetic) {
-            return Err(crate::error::PokerError::game(
-                "Username must start with a letter",
-            ));
-        }
+        Self::validate_username(username)?;
         password_policy::validate_password(password).map_err(|e| {
             crate::error::PokerError::game(format!("Password validation failed: {e}"))
         })?;
@@ -264,6 +246,7 @@ impl Database {
     /// # Errors
     ///
     /// Returns error if database query fails or password hash is corrupted
+    #[must_use = "authentication results should always be checked"]
     pub async fn verify_password(&self, username: &str, password: &str) -> Result<Option<Player>> {
         let Some(player) = self.get_player_by_username(username).await? else {
             return Ok(None);
@@ -285,6 +268,29 @@ impl Database {
     }
 
     // Helper functions
+    fn validate_username(username: &str) -> Result<()> {
+        if username.len() < crate::models::game::MIN_USERNAME_LEN
+            || username.len() > crate::models::game::MAX_USERNAME_LEN
+        {
+            return Err(crate::error::PokerError::game(format!(
+                "Username must be between {} and {} characters",
+                crate::models::game::MIN_USERNAME_LEN,
+                crate::models::game::MAX_USERNAME_LEN
+            )));
+        }
+        if !username.chars().next().is_some_and(char::is_alphabetic) {
+            return Err(crate::error::PokerError::game(
+                "Username must start with a letter",
+            ));
+        }
+        if !username.chars().all(|c| c.is_alphanumeric() || c == '_') {
+            return Err(crate::error::PokerError::game(
+                "Username can only contain letters, numbers, and underscores",
+            ));
+        }
+        Ok(())
+    }
+
     fn hash_password(password: &str) -> Result<String> {
         let salt = SaltString::generate(&mut OsRng);
         let argon2 = Argon2::default();

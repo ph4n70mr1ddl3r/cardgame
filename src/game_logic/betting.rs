@@ -268,6 +268,7 @@ impl BettingRules {
     /// # Returns
     ///
     /// * `bool` - True if the betting round is complete, false otherwise
+    #[must_use]
     pub fn is_round_complete(game: &GameState) -> bool {
         let active_player_count = game.players.iter().filter(|p| !p.is_folded).count();
 
@@ -283,6 +284,7 @@ impl BettingRules {
     }
 
     /// Get valid actions for the current player
+    #[must_use = "valid actions should be used to guide player input"]
     pub fn get_valid_actions(
         game: &GameState,
         player_idx: usize,
