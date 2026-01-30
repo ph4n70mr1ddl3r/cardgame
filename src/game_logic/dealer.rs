@@ -9,7 +9,6 @@ impl Dealer {
         // Reset for new hand
         game.hand_number += 1;
         game.deck = Deck::new();
-        game.deck.shuffle();
         game.community_cards.clear();
         game.pot = 0;
         game.current_bet = 0;

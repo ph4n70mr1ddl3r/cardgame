@@ -17,9 +17,6 @@ pub enum PasswordError {
 
     #[error("Password must contain at least one digit")]
     MissingDigit,
-
-    #[error("Password is too weak")]
-    TooWeak,
 }
 
 pub fn validate_password(password: &str) -> Result<(), PasswordError> {
