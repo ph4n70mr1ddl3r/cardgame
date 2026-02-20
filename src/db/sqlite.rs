@@ -13,8 +13,7 @@ pub struct Database {
     pool: SqlitePool,
     starting_chips: i64,
     max_connections: u32,
-    #[allow(dead_code)]
-    _timeout_secs: u64,
+    timeout_secs: u64,
 }
 
 impl Database {
@@ -44,7 +43,7 @@ impl Database {
             pool,
             starting_chips,
             max_connections,
-            _timeout_secs: timeout_secs,
+            timeout_secs,
         })
     }
 
@@ -52,6 +51,11 @@ impl Database {
     #[inline]
     pub fn max_connections(&self) -> u32 {
         self.max_connections
+    }
+
+    #[inline]
+    pub fn timeout_secs(&self) -> u64 {
+        self.timeout_secs
     }
 
     /// Checks database connectivity and returns true if healthy.

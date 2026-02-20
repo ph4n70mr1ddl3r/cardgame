@@ -42,7 +42,7 @@ impl Iterator for Combinations {
         }
 
         let mut i = 4;
-        while self.state[i] == self.n - 5 + i {
+        while i > 0 && self.state[i] == self.n - 5 + i {
             i -= 1;
         }
 

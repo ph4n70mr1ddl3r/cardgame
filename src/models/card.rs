@@ -125,6 +125,10 @@ impl Deck {
     pub fn remaining(&self) -> usize {
         self.cards.len()
     }
+
+    pub fn cards(&self) -> impl Iterator<Item = Card> + '_ {
+        self.cards.iter().copied()
+    }
 }
 
 impl Default for Deck {
@@ -172,7 +176,7 @@ mod tests {
     fn test_deck_all_unique() {
         let deck = Deck::new();
         let mut seen = std::collections::HashSet::new();
-        for card in &deck.cards {
+        for card in deck.cards() {
             let key = (card.suit, card.rank);
             assert!(!seen.contains(&key), "Duplicate card found: {:?}", card);
             seen.insert(key);
