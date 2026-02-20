@@ -14,13 +14,15 @@ struct Combinations {
 }
 
 impl Combinations {
-    fn new(n: usize) -> Self {
-        assert!(n >= 5, "Need at least 5 cards for combinations");
-        Self {
+    fn new(n: usize) -> Option<Self> {
+        if n < 5 {
+            return None;
+        }
+        Some(Self {
             n,
             state: [0, 1, 2, 3, 4],
             finished: false,
-        }
+        })
     }
 }
 
@@ -121,7 +123,12 @@ pub fn evaluate_hand(cards: &[Card]) -> Result<EvaluatedHand> {
         rank_values: vec![],
         description: String::new(),
     };
-    for indices in Combinations::new(7) {
+    let Some(combos) = Combinations::new(7) else {
+        return Err(PokerError::game(
+            "Need at least 5 cards for hand evaluation",
+        ));
+    };
+    for indices in combos {
         let combo: Vec<Card> = indices.iter().map(|&i| sorted_cards[i]).collect();
         let eval = evaluate_five_cards(&combo);
         if eval > best_hand {

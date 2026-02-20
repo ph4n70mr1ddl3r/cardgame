@@ -213,6 +213,9 @@ impl GameState {
     ///
     /// Returns error if maximum players (2 for heads-up) already seated
     pub fn add_player(&mut self, player_id: i64, username: String, buyin: i64) -> Result<()> {
+        if buyin <= 0 {
+            return Err(crate::error::PokerError::game("Buy-in must be positive"));
+        }
         if self.players.len() >= MAX_PLAYERS {
             return Err(crate::error::PokerError::game(format!(
                 "Cannot add more than {} players in heads-up poker",

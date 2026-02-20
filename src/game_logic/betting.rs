@@ -29,6 +29,13 @@ impl BettingRules {
         player_idx: usize,
         action: &PlayerAction,
     ) -> Result<()> {
+        if player_idx >= game.players.len() {
+            return Err(PokerError::invalid_player_index(
+                player_idx,
+                game.players.len().saturating_sub(1),
+            ));
+        }
+
         if game.current_player_index != Some(player_idx) {
             return Err(PokerError::invalid_action(
                 "It is not this player's turn to act",
