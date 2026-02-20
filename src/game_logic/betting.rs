@@ -153,9 +153,12 @@ impl BettingRules {
     ///
     /// Returns an error if the calculation would overflow i64
     fn calculate_min_raise(game: &GameState) -> Result<i64> {
-        game.current_bet
+        let min_raise = game
+            .current_bet
             .checked_add(game.last_raise_amount)
-            .ok_or_else(|| PokerError::game("Overflow in min raise calculation"))
+            .ok_or_else(|| PokerError::game("Overflow in min raise calculation"))?;
+
+        Ok(min_raise.max(game.big_blind))
     }
 
     /// Applies a validated action to the game state, updating chips, pot, and player status.
@@ -185,10 +188,21 @@ impl BettingRules {
         player_idx: usize,
         action: PlayerAction,
     ) -> Result<()> {
+        use crate::models::game::GameStage;
+
         if player_idx >= game.players.len() {
             return Err(PokerError::invalid_player_index(
                 player_idx,
                 game.players.len() - 1,
+            ));
+        }
+
+        if !matches!(
+            game.stage,
+            GameStage::PreFlop | GameStage::Flop | GameStage::Turn | GameStage::River
+        ) {
+            return Err(PokerError::invalid_action(
+                "Cannot perform action in current game stage",
             ));
         }
 
@@ -309,6 +323,14 @@ impl BettingRules {
         player_idx: usize,
     ) -> Result<Vec<crate::models::game::ValidAction>> {
         use crate::models::game::{PlayerAction, ValidAction};
+
+        if player_idx >= game.players.len() {
+            return Err(PokerError::invalid_player_index(
+                player_idx,
+                game.players.len().saturating_sub(1),
+            ));
+        }
+
         let player = &game.players[player_idx];
         let mut actions = Vec::new();
 

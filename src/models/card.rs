@@ -107,9 +107,9 @@ impl Deck {
 
     /// Randomly shuffles the deck using a cryptographically secure RNG.
     pub fn shuffle(&mut self) {
+        use rand::rngs::OsRng;
         use rand::seq::SliceRandom;
-        use rand::thread_rng;
-        let mut rng = thread_rng();
+        let mut rng = OsRng;
         self.cards.shuffle(&mut rng);
     }
 

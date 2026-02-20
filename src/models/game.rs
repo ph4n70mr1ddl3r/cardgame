@@ -71,8 +71,11 @@ pub struct ValidAction {
 impl std::fmt::Display for ValidAction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match &self.action {
+            PlayerAction::Fold => write!(f, "Fold"),
+            PlayerAction::Check => write!(f, "Check"),
+            PlayerAction::Call => write!(f, "Call"),
             PlayerAction::Raise(amount) => write!(f, "Raise to {amount}"),
-            other => write!(f, "{other:?}"),
+            PlayerAction::AllIn => write!(f, "All-In"),
         }
     }
 }
