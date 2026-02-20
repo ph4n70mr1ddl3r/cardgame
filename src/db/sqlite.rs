@@ -380,7 +380,7 @@ impl Database {
     pub async fn verify_password(&self, username: &str, password: &str) -> Result<Option<Player>> {
         let player = self.get_player_by_username(username).await?;
         
-        let dummy_hash = "$argon2id$v=19$m=19456,t=2,p=1$dummy$dummy";
+        let dummy_hash = "$argon2id$v=19$m=19456,t=2,p=1$YXJnb24yaWQxMjM0NTY3OA$RdescL/J3nEKE8k3V9UyW1gF5v3VK3sQ2P7bZ8xQYpk";
         let hash_to_verify = player.as_ref()
             .map(|p| p.password_hash.as_str())
             .unwrap_or(dummy_hash);
@@ -569,5 +569,39 @@ mod tests {
         let player_id = db.create_player("pooluser", "Password123").await.unwrap();
         let player = db.get_player_by_id(player_id).await.unwrap();
         assert!(player.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_verify_password_nonexistent_user() {
+        let db = setup_test_db().await;
+
+        let result = db.verify_password("nonexistent", "anypassword123").await.unwrap();
+        assert!(
+            result.is_none(),
+            "verify_password should return None for non-existent user"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_verify_password_timing_safe() {
+        let db = setup_test_db().await;
+        db.create_player("timinguser", "CorrectPass123").await.unwrap();
+
+        let start_nonexistent = std::time::Instant::now();
+        let _ = db.verify_password("nonexistent", "wrongpassword123").await;
+        let time_nonexistent = start_nonexistent.elapsed();
+
+        let start_wrong = std::time::Instant::now();
+        let _ = db.verify_password("timinguser", "wrongpassword123").await;
+        let time_wrong = start_wrong.elapsed();
+
+        assert!(
+            time_nonexistent.as_millis() < 1000,
+            "Timing for non-existent user should be similar to existing user (timing-safe)"
+        );
+        assert!(
+            time_wrong.as_millis() < 1000,
+            "Timing for wrong password should be similar to non-existent user"
+        );
     }
 }

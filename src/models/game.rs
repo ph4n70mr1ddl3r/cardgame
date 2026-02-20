@@ -2,26 +2,22 @@ use super::card::{Card, Deck};
 use crate::error::Result;
 use serde::{Deserialize, Serialize};
 
-/// Maximum number of players per table (currently heads-up only)
 pub const MAX_PLAYERS: usize = 2;
-
-/// Standard number of cards in a poker deck
 pub const CARDS_IN_DECK: usize = 52;
-
-/// Number of hole cards dealt to each player
 pub const HOLE_CARDS: usize = 2;
-
-/// Number of community cards (flop, turn, river)
 pub const COMMUNITY_CARDS: usize = 5;
-
-/// Minimum username length
 pub const MIN_USERNAME_LEN: usize = 3;
-
-/// Maximum username length
 pub const MAX_USERNAME_LEN: usize = 20;
+
+const _: () = assert!(MAX_PLAYERS >= 2);
+const _: () = assert!(HOLE_CARDS > 0);
+const _: () = assert!(COMMUNITY_CARDS == 5);
+const _: () = assert!(MIN_USERNAME_LEN > 0);
+const _: () = assert!(MAX_USERNAME_LEN > MIN_USERNAME_LEN);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum GameStage {
     WaitingForPlayers,
     PreFlop,
@@ -34,6 +30,7 @@ pub enum GameStage {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[non_exhaustive]
 pub enum PlayerAction {
     Fold,
     Check,
@@ -128,6 +125,12 @@ impl PlayerGameState {
 
     pub fn reset_round_bet(&mut self) {
         self.bet_this_round = 0;
+    }
+
+    #[must_use]
+    #[inline]
+    pub fn can_act(&self) -> bool {
+        !self.is_folded && !self.is_all_in && !self.is_disconnected && self.chips > 0
     }
 }
 
@@ -294,5 +297,27 @@ mod tests {
         assert_eq!(player.total_bet, 0);
         assert!(!player.is_folded);
         assert!(!player.is_dealer);
+    }
+
+    #[test]
+    fn test_player_can_act() {
+        let player = PlayerGameState::new(1, "test".to_string(), 100, true);
+        assert!(player.can_act());
+
+        let mut folded = player.clone();
+        folded.is_folded = true;
+        assert!(!folded.can_act());
+
+        let mut all_in = player.clone();
+        all_in.is_all_in = true;
+        assert!(!all_in.can_act());
+
+        let mut disconnected = player.clone();
+        disconnected.is_disconnected = true;
+        assert!(!disconnected.can_act());
+
+        let mut no_chips = player.clone();
+        no_chips.chips = 0;
+        assert!(!no_chips.can_act());
     }
 }

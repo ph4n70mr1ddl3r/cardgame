@@ -107,8 +107,8 @@ impl Config {
     /// - `POKER_BIG_BLIND` - Big blind amount (default: 100)
     /// - `POKER_MIN_BUYIN_BB` - Minimum buy-in in big blinds (default: 20)
     /// - `POKER_MAX_BUYIN_BB` - Maximum buy-in in big blinds (default: 100)
-    /// - `POKER_FAUCET_AMOUNT` - Top-up amount (default: 100)
-    /// - `POKER_STARTING_CHIPS` - Starting chips for new players (default: 100)
+    /// - `POKER_FAUCET_AMOUNT` - Top-up amount (default: 1000)
+    /// - `POKER_STARTING_CHIPS` - Starting chips for new players (default: 10000)
     /// - `POKER_DB_MAX_CONNECTIONS` - Database pool size (default: 10)
     ///
     /// # Returns
