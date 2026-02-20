@@ -3,7 +3,7 @@ use super::game::{GameStage, PlayerAction, PlayerGameState};
 use serde::{Deserialize, Serialize};
 
 // Client -> Server Messages
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Clone, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ClientMessage {
     Signup { username: String, password: String },
@@ -14,6 +14,38 @@ pub enum ClientMessage {
     GameAction { action: PlayerAction },
     TopUp,
     Ping,
+}
+
+impl std::fmt::Debug for ClientMessage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ClientMessage::Signup { username, .. } => f
+                .debug_struct("Signup")
+                .field("username", username)
+                .field("password", &"[REDACTED]")
+                .finish(),
+            ClientMessage::Login { username, .. } => f
+                .debug_struct("Login")
+                .field("username", username)
+                .field("password", &"[REDACTED]")
+                .finish(),
+            ClientMessage::CreateTable { name } => {
+                f.debug_struct("CreateTable").field("name", name).finish()
+            }
+            ClientMessage::JoinTable { table_id, buyin } => f
+                .debug_struct("JoinTable")
+                .field("table_id", table_id)
+                .field("buyin", buyin)
+                .finish(),
+            ClientMessage::LeaveTable => write!(f, "LeaveTable"),
+            ClientMessage::GameAction { action } => f
+                .debug_struct("GameAction")
+                .field("action", action)
+                .finish(),
+            ClientMessage::TopUp => write!(f, "TopUp"),
+            ClientMessage::Ping => write!(f, "Ping"),
+        }
+    }
 }
 
 // Server -> Client Messages

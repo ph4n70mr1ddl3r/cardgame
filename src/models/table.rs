@@ -31,6 +31,14 @@ impl Table {
         if name.len() > 100 {
             return Err(PokerError::game("Table name cannot exceed 100 characters"));
         }
+        if !name
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == ' ' || c == '-' || c == '_')
+        {
+            return Err(PokerError::game(
+                "Table name can only contain letters, numbers, spaces, hyphens, and underscores",
+            ));
+        }
         if small_blind <= 0 {
             return Err(PokerError::game("Small blind must be positive"));
         }

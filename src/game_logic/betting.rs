@@ -106,6 +106,9 @@ impl BettingRules {
 
         let min_raise = Self::calculate_min_raise(game)?;
 
+        // Short-stack exception: if player doesn't have enough chips to meet the minimum raise,
+        // they can still go all-in for their remaining stack (handled by AllIn action).
+        // This condition only enforces minimum raise when player HAS sufficient chips.
         if raise_to < min_raise && total_needed < player.chips {
             return Err(PokerError::invalid_action(format!(
                 "Minimum raise is {min_raise} (attempted {raise_to})"

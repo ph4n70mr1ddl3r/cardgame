@@ -168,11 +168,18 @@ fn evaluate_five_cards(cards: &[Card]) -> EvaluatedHand {
 
     // Straight Flush
     if is_straight && is_flush {
-        let high_card = cards[0].rank as u8;
+        let values: Vec<u8> = cards.iter().map(|c| c.rank as u8).collect();
+        let is_wheel = values == vec![14, 5, 4, 3, 2];
+        let high_card = if is_wheel { 5 } else { cards[0].rank as u8 };
+        let desc = if is_wheel {
+            "5-high Straight Flush (Steel Wheel)".to_string()
+        } else {
+            format!("{}-high Straight Flush", rank_name(cards[0].rank))
+        };
         return EvaluatedHand {
             hand_rank: HandRank::StraightFlush,
             rank_values: vec![high_card],
-            description: format!("{}-high Straight Flush", rank_name(cards[0].rank)),
+            description: desc,
         };
     }
 
@@ -210,11 +217,18 @@ fn evaluate_five_cards(cards: &[Card]) -> EvaluatedHand {
 
     // Straight
     if is_straight {
-        let high_card = cards[0].rank as u8;
+        let values: Vec<u8> = cards.iter().map(|c| c.rank as u8).collect();
+        let is_wheel = values == vec![14, 5, 4, 3, 2];
+        let high_card = if is_wheel { 5 } else { cards[0].rank as u8 };
+        let desc = if is_wheel {
+            "5-high Straight (Wheel)".to_string()
+        } else {
+            format!("{}-high Straight", rank_name(cards[0].rank))
+        };
         return EvaluatedHand {
             hand_rank: HandRank::Straight,
             rank_values: vec![high_card],
-            description: format!("{}-high Straight", rank_name(cards[0].rank)),
+            description: desc,
         };
     }
 
