@@ -86,8 +86,8 @@ impl Default for Config {
             big_blind: 100,
             min_buyin_bb: 20,
             max_buyin_bb: 100,
-            faucet_amount: 100,
-            starting_chips: 100,
+            faucet_amount: 1000,
+            starting_chips: 10000,
             db_max_connections: 10,
             db_timeout_secs: 30,
         }

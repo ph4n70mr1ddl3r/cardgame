@@ -1,5 +1,5 @@
 use super::card::Card;
-use super::game::{GameStage, PlayerAction, PlayerGameState};
+use super::game::{GameStage, PlayerAction, PlayerGameState, ValidAction};
 use serde::{Deserialize, Serialize};
 
 // Client -> Server Messages
@@ -89,9 +89,7 @@ pub enum ServerMessage {
         cards: Vec<Card>,
     },
     ActionRequired {
-        valid_actions: Vec<PlayerAction>,
-        min_raise: Option<i64>,
-        max_raise: Option<i64>,
+        valid_actions: Vec<ValidAction>,
     },
     PlayerAction {
         player_id: i64,

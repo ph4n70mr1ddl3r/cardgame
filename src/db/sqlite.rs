@@ -328,6 +328,12 @@ impl Database {
         hands_played_delta: i64,
         hands_won_delta: i64,
     ) -> Result<()> {
+        if hands_played_delta < 0 || hands_won_delta < 0 {
+            return Err(crate::error::PokerError::game(
+                "Stat deltas cannot be negative",
+            ));
+        }
+
         self.transaction(|tx| Box::pin(async move {
             sqlx::query("UPDATE players SET chips = chips + ? WHERE id = ? AND chips + ? >= 0")
                 .bind(chip_delta)
@@ -338,12 +344,6 @@ impl Database {
                 .map_err(|e| {
                     crate::error::PokerError::game(format!("Failed to update chips: {}", e))
                 })?;
-
-            if hands_played_delta < 0 || hands_won_delta < 0 {
-                return Err(crate::error::PokerError::game(
-                    "Stat deltas cannot be negative",
-                ));
-            }
 
             sqlx::query(
                 "UPDATE players SET hands_played = hands_played + ?, hands_won = hands_won + ? WHERE id = ?",

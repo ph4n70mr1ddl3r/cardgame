@@ -109,8 +109,8 @@ impl PlayerGameState {
             is_folded: false,
             is_all_in: false,
             is_dealer,
-            is_small_blind: !is_dealer, // Heads-up: non-dealer is SB
-            is_big_blind: is_dealer,    // Heads-up: dealer is BB
+            is_small_blind: is_dealer,
+            is_big_blind: !is_dealer,
             is_disconnected: false,
         }
     }
@@ -122,8 +122,8 @@ impl PlayerGameState {
         self.is_folded = false;
         self.is_all_in = false;
         self.is_dealer = is_dealer;
-        self.is_small_blind = !is_dealer;
-        self.is_big_blind = is_dealer;
+        self.is_small_blind = is_dealer;
+        self.is_big_blind = !is_dealer;
     }
 
     pub fn reset_round_bet(&mut self) {

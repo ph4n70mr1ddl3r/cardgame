@@ -15,7 +15,7 @@ struct Combinations {
 
 impl Combinations {
     fn new(n: usize) -> Self {
-        debug_assert!(n >= 5, "Need at least 5 cards for combinations");
+        assert!(n >= 5, "Need at least 5 cards for combinations");
         Self {
             n,
             state: [0, 1, 2, 3, 4],
