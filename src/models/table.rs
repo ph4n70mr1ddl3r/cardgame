@@ -67,8 +67,14 @@ impl Table {
         if buyin < 0 {
             return Err(PokerError::game("Buy-in cannot be negative"));
         }
-        let min_buyin = self.big_blind * i64::from(min_buyin_bb);
-        let max_buyin = self.big_blind * i64::from(max_buyin_bb);
+        let min_buyin = self
+            .big_blind
+            .checked_mul(i64::from(min_buyin_bb))
+            .ok_or_else(|| PokerError::game("Buy-in calculation overflow"))?;
+        let max_buyin = self
+            .big_blind
+            .checked_mul(i64::from(max_buyin_bb))
+            .ok_or_else(|| PokerError::game("Buy-in calculation overflow"))?;
         if buyin < min_buyin {
             return Err(PokerError::game(format!(
                 "Buy-in must be at least {min_buyin_bb} big blinds"

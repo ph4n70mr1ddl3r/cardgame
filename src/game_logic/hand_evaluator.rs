@@ -2,6 +2,11 @@ use crate::error::{PokerError, Result};
 use crate::models::card::{Card, Rank};
 use std::collections::HashMap;
 
+const RANK_NAMES: [&str; 13] = [
+    "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Jack", "Queen",
+    "King", "Ace",
+];
+
 struct Combinations {
     n: usize,
     state: [usize; 5],
@@ -10,9 +15,7 @@ struct Combinations {
 
 impl Combinations {
     fn new(n: usize) -> Self {
-        if n < 5 {
-            panic!("Need at least 5 cards for combinations");
-        }
+        debug_assert!(n >= 5, "Need at least 5 cards for combinations");
         Self {
             n,
             state: [0, 1, 2, 3, 4],
@@ -297,10 +300,6 @@ fn check_straight(cards: &[Card]) -> bool {
 ///
 /// * `&'static str` - The rank name as a string slice
 fn rank_name(rank: Rank) -> &'static str {
-    const RANK_NAMES: [&str; 13] = [
-        "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Jack", "Queen",
-        "King", "Ace",
-    ];
     RANK_NAMES[rank as usize - 2]
 }
 

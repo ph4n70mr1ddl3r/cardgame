@@ -132,19 +132,46 @@ impl Dealer {
     }
 
     /// Deals the flop (3 community cards) after burning one card.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if the betting round is not complete.
     pub fn deal_flop(game: &mut GameState) -> Result<()> {
+        if !crate::game_logic::betting::BettingRules::is_round_complete(game) {
+            return Err(crate::error::PokerError::game(
+                "Cannot deal flop: betting round not complete",
+            ));
+        }
         Self::deal_community_cards(game, GameStage::Flop, 3);
         Ok(())
     }
 
     /// Deals the turn (4th community card) after burning one card.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if the betting round is not complete.
     pub fn deal_turn(game: &mut GameState) -> Result<()> {
+        if !crate::game_logic::betting::BettingRules::is_round_complete(game) {
+            return Err(crate::error::PokerError::game(
+                "Cannot deal turn: betting round not complete",
+            ));
+        }
         Self::deal_community_cards(game, GameStage::Turn, 1);
         Ok(())
     }
 
     /// Deals the river (5th community card) after burning one card.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if the betting round is not complete.
     pub fn deal_river(game: &mut GameState) -> Result<()> {
+        if !crate::game_logic::betting::BettingRules::is_round_complete(game) {
+            return Err(crate::error::PokerError::game(
+                "Cannot deal river: betting round not complete",
+            ));
+        }
         Self::deal_community_cards(game, GameStage::River, 1);
         Ok(())
     }
@@ -189,10 +216,14 @@ mod tests {
     #[test]
     fn test_deal_flop() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100).unwrap();
-        game.add_player(2, "player2".to_string(), 100).unwrap();
+        game.add_player(1, "player1".to_string(), 10000).unwrap();
+        game.add_player(2, "player2".to_string(), 10000).unwrap();
 
         Dealer::start_new_hand(&mut game).unwrap();
+
+        game.players[0].bet_this_round = game.big_blind;
+        game.players[1].bet_this_round = game.big_blind;
+
         Dealer::deal_flop(&mut game).unwrap();
 
         assert_eq!(game.stage, GameStage::Flop);
@@ -202,11 +233,19 @@ mod tests {
     #[test]
     fn test_deal_turn() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100).unwrap();
-        game.add_player(2, "player2".to_string(), 100).unwrap();
+        game.add_player(1, "player1".to_string(), 10000).unwrap();
+        game.add_player(2, "player2".to_string(), 10000).unwrap();
 
         Dealer::start_new_hand(&mut game).unwrap();
+
+        game.players[0].bet_this_round = game.big_blind;
+        game.players[1].bet_this_round = game.big_blind;
+
         Dealer::deal_flop(&mut game).unwrap();
+
+        game.players[0].bet_this_round = 0;
+        game.players[1].bet_this_round = 0;
+
         Dealer::deal_turn(&mut game).unwrap();
 
         assert_eq!(game.stage, GameStage::Turn);
@@ -216,12 +255,24 @@ mod tests {
     #[test]
     fn test_deal_river() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100).unwrap();
-        game.add_player(2, "player2".to_string(), 100).unwrap();
+        game.add_player(1, "player1".to_string(), 10000).unwrap();
+        game.add_player(2, "player2".to_string(), 10000).unwrap();
 
         Dealer::start_new_hand(&mut game).unwrap();
+
+        game.players[0].bet_this_round = game.big_blind;
+        game.players[1].bet_this_round = game.big_blind;
+
         Dealer::deal_flop(&mut game).unwrap();
+
+        game.players[0].bet_this_round = 0;
+        game.players[1].bet_this_round = 0;
+
         Dealer::deal_turn(&mut game).unwrap();
+
+        game.players[0].bet_this_round = 0;
+        game.players[1].bet_this_round = 0;
+
         Dealer::deal_river(&mut game).unwrap();
 
         assert_eq!(game.stage, GameStage::River);

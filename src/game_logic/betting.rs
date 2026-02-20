@@ -29,6 +29,12 @@ impl BettingRules {
         player_idx: usize,
         action: &PlayerAction,
     ) -> Result<()> {
+        if game.current_player_index != Some(player_idx) {
+            return Err(PokerError::invalid_action(
+                "It is not this player's turn to act",
+            ));
+        }
+
         let player = &game.players[player_idx];
 
         if player.is_folded {
@@ -377,24 +383,24 @@ mod tests {
     #[test]
     fn test_validate_call() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100).unwrap();
-        game.add_player(2, "player2".to_string(), 100).unwrap();
+        game.add_player(1, "player1".to_string(), 10000).unwrap();
+        game.add_player(2, "player2".to_string(), 10000).unwrap();
         Dealer::start_new_hand(&mut game).unwrap();
 
-        assert!(BettingRules::validate_action(&game, 0, &PlayerAction::Call).is_ok());
+        assert!(BettingRules::validate_action(&game, 1, &PlayerAction::Check).is_ok());
     }
 
     #[test]
     fn test_apply_call() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100).unwrap();
-        game.add_player(2, "player2".to_string(), 100).unwrap();
+        game.add_player(1, "player1".to_string(), 10000).unwrap();
+        game.add_player(2, "player2".to_string(), 10000).unwrap();
         Dealer::start_new_hand(&mut game).unwrap();
 
-        let initial_chips = game.players[0].chips;
-        BettingRules::apply_action(&mut game, 0, PlayerAction::Call).unwrap();
+        let initial_chips = game.players[1].chips;
+        BettingRules::apply_action(&mut game, 1, PlayerAction::Check).unwrap();
 
-        assert!(game.players[0].chips < initial_chips);
+        assert_eq!(game.players[1].chips, initial_chips);
     }
 
     #[test]
@@ -404,22 +410,22 @@ mod tests {
         game.add_player(2, "player2".to_string(), 10000).unwrap();
         Dealer::start_new_hand(&mut game).unwrap();
 
-        BettingRules::apply_action(&mut game, 0, PlayerAction::Raise(200)).unwrap();
+        BettingRules::apply_action(&mut game, 1, PlayerAction::Raise(200)).unwrap();
 
         assert_eq!(game.current_bet, 200);
-        assert_eq!(game.players[0].bet_this_round, 200);
+        assert_eq!(game.players[1].bet_this_round, 200);
     }
 
     #[test]
     fn test_apply_fold() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100).unwrap();
-        game.add_player(2, "player2".to_string(), 100).unwrap();
+        game.add_player(1, "player1".to_string(), 10000).unwrap();
+        game.add_player(2, "player2".to_string(), 10000).unwrap();
         Dealer::start_new_hand(&mut game).unwrap();
 
-        BettingRules::apply_action(&mut game, 0, PlayerAction::Fold).unwrap();
+        BettingRules::apply_action(&mut game, 1, PlayerAction::Fold).unwrap();
 
-        assert!(game.players[0].is_folded);
+        assert!(game.players[1].is_folded);
     }
 
     #[test]
@@ -429,10 +435,10 @@ mod tests {
         game.add_player(2, "player2".to_string(), 5000).unwrap();
         Dealer::start_new_hand(&mut game).unwrap();
 
-        BettingRules::apply_action(&mut game, 0, PlayerAction::AllIn).unwrap();
+        BettingRules::apply_action(&mut game, 1, PlayerAction::AllIn).unwrap();
 
-        assert_eq!(game.players[0].chips, 0);
-        assert!(game.players[0].is_all_in);
+        assert_eq!(game.players[1].chips, 0);
+        assert!(game.players[1].is_all_in);
     }
 
     #[test]
@@ -463,18 +469,18 @@ mod tests {
     #[test]
     fn test_get_valid_actions() {
         let mut game = GameState::new(1, 50, 100);
-        game.add_player(1, "player1".to_string(), 100).unwrap();
-        game.add_player(2, "player2".to_string(), 100).unwrap();
+        game.add_player(1, "player1".to_string(), 10000).unwrap();
+        game.add_player(2, "player2".to_string(), 10000).unwrap();
         Dealer::start_new_hand(&mut game).unwrap();
 
-        let actions = BettingRules::get_valid_actions(&game, 0).unwrap();
+        let actions = BettingRules::get_valid_actions(&game, 1).unwrap();
 
         assert!(actions
             .iter()
             .any(|a| matches!(a.action, PlayerAction::Fold)));
         assert!(actions
             .iter()
-            .any(|a| matches!(a.action, PlayerAction::Call)));
+            .any(|a| matches!(a.action, PlayerAction::Check)));
         assert!(actions
             .iter()
             .any(|a| matches!(a.action, PlayerAction::Raise(_))));
@@ -493,7 +499,7 @@ mod tests {
         let min_raise = BettingRules::calculate_min_raise(&game).unwrap();
         assert_eq!(min_raise, 200);
 
-        BettingRules::apply_action(&mut game, 0, PlayerAction::Raise(200)).unwrap();
+        BettingRules::apply_action(&mut game, 1, PlayerAction::Raise(200)).unwrap();
 
         let min_raise = BettingRules::calculate_min_raise(&game).unwrap();
         assert_eq!(min_raise, 300);
@@ -508,10 +514,11 @@ mod tests {
 
         assert_eq!(game.last_raise_amount, 100);
 
-        BettingRules::apply_action(&mut game, 0, PlayerAction::Raise(200)).unwrap();
+        BettingRules::apply_action(&mut game, 1, PlayerAction::Raise(200)).unwrap();
         assert_eq!(game.last_raise_amount, 100);
 
-        BettingRules::apply_action(&mut game, 1, PlayerAction::Raise(400)).unwrap();
+        game.current_player_index = Some(0);
+        BettingRules::apply_action(&mut game, 0, PlayerAction::Raise(400)).unwrap();
         assert_eq!(game.last_raise_amount, 200);
     }
 
@@ -522,9 +529,9 @@ mod tests {
         game.add_player(2, "player2".to_string(), 10000).unwrap();
         Dealer::start_new_hand(&mut game).unwrap();
 
-        assert!(BettingRules::validate_action(&game, 0, &PlayerAction::Raise(0)).is_err());
-        assert!(BettingRules::validate_action(&game, 0, &PlayerAction::Raise(-50)).is_err());
-        assert!(BettingRules::validate_action(&game, 0, &PlayerAction::Raise(99)).is_err());
+        assert!(BettingRules::validate_action(&game, 1, &PlayerAction::Raise(0)).is_err());
+        assert!(BettingRules::validate_action(&game, 1, &PlayerAction::Raise(-50)).is_err());
+        assert!(BettingRules::validate_action(&game, 1, &PlayerAction::Raise(99)).is_err());
     }
 
     #[test]

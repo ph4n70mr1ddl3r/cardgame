@@ -378,11 +378,14 @@ impl Database {
     /// Returns error if database query fails or password hash is corrupted
     #[must_use = "authentication results should always be checked"]
     pub async fn verify_password(&self, username: &str, password: &str) -> Result<Option<Player>> {
-        let Some(player) = self.get_player_by_username(username).await? else {
-            return Ok(None);
-        };
-
-        let parsed_hash = PasswordHash::new(&player.password_hash).map_err(|e| {
+        let player = self.get_player_by_username(username).await?;
+        
+        let dummy_hash = "$argon2id$v=19$m=19456,t=2,p=1$dummy$dummy";
+        let hash_to_verify = player.as_ref()
+            .map(|p| p.password_hash.as_str())
+            .unwrap_or(dummy_hash);
+        
+        let parsed_hash = PasswordHash::new(hash_to_verify).map_err(|e| {
             crate::error::PokerError::auth(format!("Invalid password hash format: {e}"))
         })?;
 
@@ -390,8 +393,8 @@ impl Database {
             .verify_password(password.as_bytes(), &parsed_hash)
             .is_ok();
 
-        if is_valid {
-            Ok(Some(player))
+        if is_valid && player.is_some() {
+            Ok(player)
         } else {
             Ok(None)
         }

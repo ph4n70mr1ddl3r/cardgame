@@ -14,8 +14,6 @@ pub const HOLE_CARDS: usize = 2;
 /// Number of community cards (flop, turn, river)
 pub const COMMUNITY_CARDS: usize = 5;
 
-pub use crate::password_policy::{MAX_PASSWORD_LEN, MIN_PASSWORD_LEN};
-
 /// Minimum username length
 pub const MIN_USERNAME_LEN: usize = 3;
 
@@ -42,6 +40,18 @@ pub enum PlayerAction {
     Call,
     Raise(i64),
     AllIn,
+}
+
+impl std::fmt::Display for PlayerAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PlayerAction::Fold => write!(f, "Fold"),
+            PlayerAction::Check => write!(f, "Check"),
+            PlayerAction::Call => write!(f, "Call"),
+            PlayerAction::Raise(amount) => write!(f, "Raise to {}", amount),
+            PlayerAction::AllIn => write!(f, "All-In"),
+        }
+    }
 }
 
 /// Represents a valid action a player can take in the current game state.
